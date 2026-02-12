@@ -1,0 +1,7 @@
+"Dự án này sử dụng React Native và Yarn."
+
+"Luôn ưu tiên sử dụng NativeWind (Tailwind CSS) cho styling."
+
+"Khi nhận dữ liệu từ Stitch, hãy ánh xạ các Design Tokens sang biến Tailwind tương ứng."
+
+"Trước khi commit lên GitHub, hãy chạy lệnh yarn lint để kiểm tra lỗi."

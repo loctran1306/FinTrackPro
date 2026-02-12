@@ -4,3 +4,5 @@ extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autoli
 rootProject.name = 'FinTrackPro'
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
+include ':react-native-vector-icons'
+project(':react-native-vector-icons').projectDir = file("../../node_modules/react-native-vector-icons/android")
