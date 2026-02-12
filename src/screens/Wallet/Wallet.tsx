@@ -4,7 +4,7 @@ import Screen from '@/components/common/Screen';
 
 export const WalletScreen = () => {
   return (
-    <Screen>
+    <Screen padding="m">
       <Text variant="header">Ví của tôi</Text>
 
       <Box
@@ -26,34 +26,19 @@ export const WalletScreen = () => {
 
       <Box marginTop="m">
         <Text variant="body">Danh sách ví</Text>
-        <Box
-          backgroundColor="card"
-          padding="m"
-          borderRadius={14}
-          marginTop="s"
-        >
+        <Box backgroundColor="card" padding="m" borderRadius={14} marginTop="s">
           <Text variant="body">Ví tiền mặt</Text>
           <Text variant="body" color="secondaryText">
             3,200,000đ
           </Text>
         </Box>
-        <Box
-          backgroundColor="card"
-          padding="m"
-          borderRadius={14}
-          marginTop="s"
-        >
+        <Box backgroundColor="card" padding="m" borderRadius={14} marginTop="s">
           <Text variant="body">Tài khoản ngân hàng</Text>
           <Text variant="body" color="secondaryText">
             16,800,000đ
           </Text>
         </Box>
-        <Box
-          backgroundColor="card"
-          padding="m"
-          borderRadius={14}
-          marginTop="s"
-        >
+        <Box backgroundColor="card" padding="m" borderRadius={14} marginTop="s">
           <Text variant="body">Ví tiết kiệm</Text>
           <Text variant="body" color="secondaryText">
             1,300,000đ

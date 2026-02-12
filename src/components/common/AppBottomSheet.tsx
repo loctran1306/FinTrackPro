@@ -1,4 +1,4 @@
-import { COLORS } from '@/theme';
+import { COLORS, Theme } from '@/theme';
 import { SPACING } from '@/theme/constant';
 import {
   BottomSheetBackdrop,
@@ -6,6 +6,7 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
+import { useTheme } from '@shopify/restyle';
 import React, {
   forwardRef,
   useCallback,
@@ -31,6 +32,7 @@ interface AppBottomSheetProps {
 
 const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>(
   ({ children, snapPoints, onClose, enableDynamicSizing = false }, ref) => {
+    const { colors } = useTheme<Theme>();
     const modalRef = useRef<BottomSheetModal>(null);
 
     useImperativeHandle(ref, () => ({
@@ -86,7 +88,11 @@ const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>(
         backdropComponent={renderBackdrop}
         onDismiss={onClose}
         handleIndicatorStyle={styles.indicator}
-        backgroundStyle={styles.background}
+        backgroundStyle={{
+          backgroundColor: colors.main,
+          borderTopLeftRadius: 30,
+          borderTopRightRadius: 30,
+        }}
         keyboardBehavior="extend"
         keyboardBlurBehavior="restore"
         android_keyboardInputMode="adjustResize"
@@ -109,10 +115,6 @@ const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>(
 const styles = StyleSheet.create({
   backdrop: {
     backgroundColor: 'rgba(0,0,0,1)',
-  },
-  background: {
-    backgroundColor: COLORS.white,
-    borderRadius: 30,
   },
   indicator: {
     backgroundColor: COLORS.primary,

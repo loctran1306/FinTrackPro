@@ -6,8 +6,14 @@ import { signInWithGoogle } from '@/services/auth/auth.service';
 import { deviceService } from '@/services/device/device.service';
 import { setSession } from '@/store/auth/auth.slice';
 import { useAppDispatch } from '@/store/hooks';
+import { getTransactionsThunk } from '@/store/transaction/transaction.thunk';
+import {
+  getFinanceOverviewThunk,
+  getWalletsThunk,
+} from '@/store/wallet/wallet.thunk';
 import { Theme } from '@/theme';
 import { RADIUS } from '@/theme/constant';
+import { toast } from '@/utils/toast';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text } from '@theme/components';
 import React, { useCallback, useRef, useState } from 'react';
@@ -46,12 +52,15 @@ export default function LoginScreen({ navigation }: any) {
   const handleProgressComplete = useCallback(async () => {
     const result = loginResultRef.current;
     setLoading(false);
-    setLoginComplete(false);
 
-    if (!result) return;
+    if (!result) {
+      setLoginComplete(false);
+      return;
+    }
 
     if (result.error) {
-      Alert.alert('Thông báo', result.error);
+      toast.error(result.error);
+      setLoginComplete(false);
     } else if (result.session) {
       dispatch(setSession(result.session));
       if (Platform.OS === 'android') {
@@ -59,7 +68,24 @@ export default function LoginScreen({ navigation }: any) {
           await deviceService.updateDeviceToken(result.session.user.id);
         }
       }
-      navigation.replace('MainTab', { screen: 'Home' });
+      if (result.session.user && result.session.user.id) {
+        Promise.all([
+          dispatch(getFinanceOverviewThunk()),
+          dispatch(getWalletsThunk(result.session.user.id)),
+          dispatch(
+            getTransactionsThunk({
+              userId: result.session.user.id,
+              page: 1,
+              limit: 10,
+            }),
+          ),
+        ]).finally(() => {
+          navigation.replace('MainTab', { screen: 'Home' });
+          setLoginComplete(false);
+        });
+      } else {
+        setLoginComplete(false);
+      }
     }
   }, [dispatch, navigation]);
 

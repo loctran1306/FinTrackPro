@@ -30,12 +30,13 @@ export const ProfileScreen = () => {
       toast.success(message);
       navigation.replace('AuthStack');
       dispatch(clearSession());
+    } else {
+      toast.error(message);
     }
-    toast.error(message);
   };
 
   return (
-    <Screen>
+    <Screen padding="m">
       <Box
         flexDirection="row"
         alignItems="center"
@@ -43,7 +44,11 @@ export const ProfileScreen = () => {
       >
         <Text variant="header">Cá nhân</Text>
         <Pressable onPress={handleLogout}>
-          <AppIcon name="sign-out" size={24} color={colors.primary} />
+          <AppIcon
+            name="arrow-right-from-bracket"
+            size={24}
+            color={colors.primary}
+          />
         </Pressable>
         <Pressable onPress={() => setShowSettings(value => !value)}>
           <AppIcon name="gear" size={24} color={colors.primary} />

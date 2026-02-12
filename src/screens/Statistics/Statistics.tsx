@@ -4,15 +4,10 @@ import Screen from '@/components/common/Screen';
 
 export const StatisticsScreen = () => {
   return (
-    <Screen>
+    <Screen padding="m">
       <Text variant="header">Thống kê</Text>
 
-      <Box
-        backgroundColor="card"
-        padding="m"
-        borderRadius={16}
-        marginTop="m"
-      >
+      <Box backgroundColor="card" padding="m" borderRadius={16} marginTop="m">
         <Text variant="body" color="secondaryText">
           Tóm tắt tháng này
         </Text>
@@ -30,12 +25,7 @@ export const StatisticsScreen = () => {
         </Box>
       </Box>
 
-      <Box
-        backgroundColor="card"
-        padding="m"
-        borderRadius={16}
-        marginTop="m"
-      >
+      <Box backgroundColor="card" padding="m" borderRadius={16} marginTop="m">
         <Text variant="body" color="secondaryText">
           Danh mục chi tiêu
         </Text>
