@@ -51,10 +51,10 @@ const AppSwipeable = ({
 
   const RightAction = ({
     progress,
-    onPress,
+    handlePress,
   }: {
     progress: SharedValue<number>;
-    onPress: () => void;
+    handlePress: () => void;
   }) => {
     const animatedTrashStyle = useAnimatedStyle(() => ({
       backgroundColor: interpolateColor(
@@ -92,7 +92,7 @@ const AppSwipeable = ({
     }));
 
     return (
-      <AppButton onPress={onPress}>
+      <AppButton shadow={false} onPress={handlePress}>
         <Box
           width={100}
           justifyContent="center"
@@ -132,7 +132,7 @@ const AppSwipeable = ({
       <ReanimatedSwipeable
         key={swipeableKey}
         renderRightActions={progress => (
-          <RightAction progress={progress} onPress={handleDeletePress} />
+          <RightAction progress={progress} handlePress={handleDeletePress} />
         )}
         friction={2}
         rightThreshold={40}

@@ -8,7 +8,7 @@ import { name as appName } from './app.json';
 
 // Bắt buộc phải có để nhận diện tương tác khi app tắt
 notifee.onBackgroundEvent(async ({ type, detail }) => {
-  const { notification, pressAction } = detail;
+  const { notification: _notification, pressAction: _pressAction } = detail;
 
   if (type === EventType.PRESS) {
     console.log('User nhấn vào thông báo trên iOS');

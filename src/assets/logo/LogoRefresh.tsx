@@ -1,5 +1,4 @@
 import React from 'react';
-import { Image } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 export const LogoRefresh = ({ style }: { style?: any }) => {
