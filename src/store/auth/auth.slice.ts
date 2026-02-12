@@ -23,7 +23,9 @@ const authSlice = createSlice({
       state.initializing = false;
     },
     clearSession(state) {
-      state = initialState;
+      state.session = null;
+      state.isAuthenticated = false;
+      state.initializing = false;
     },
   },
 });

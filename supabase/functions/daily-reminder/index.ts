@@ -3,7 +3,7 @@ import { createClient } from 'supabase';
 // Sử dụng trực tiếp npm specifier để tránh lỗi không tìm thấy module local
 import { JWT } from 'google-auth';
 
-serve(async req => {
+serve(async _req => {
   try {
     // 1. Lấy Config từ Secrets (Đảm bảo Lộc đã set FIREBASE_CONFIG trong Supabase Dashboard)
     const firebaseConfig = JSON.parse(Deno.env.get('FIREBASE_CONFIG') || '{}');

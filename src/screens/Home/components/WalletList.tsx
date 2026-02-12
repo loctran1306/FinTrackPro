@@ -1,12 +1,10 @@
 import AppButton from '@/components/button/AppButton';
 import { formatVND } from '@/helpers/currency.helper';
-import { WalletType } from '@/services/wallet/wallet.type';
-import { Box, Text } from '@/theme/components';
-import { SPACING } from '@/theme/constant';
-import { ScrollView } from 'react-native';
 import { useAppSelector } from '@/store/hooks';
 import { selectWallets } from '@/store/wallet/wallet.selector';
-import { useWindowDimensions } from 'react-native';
+import { Box, Text } from '@/theme/components';
+import { SPACING } from '@/theme/constant';
+import { ScrollView, useWindowDimensions } from 'react-native';
 
 const WalletList = () => {
   const { width: windowWidth } = useWindowDimensions();

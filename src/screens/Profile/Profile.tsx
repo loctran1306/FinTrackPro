@@ -9,11 +9,13 @@ import { Theme } from '@/theme';
 import AppIcon from '@/components/common/AppIcon';
 import { signOut } from '@/services/auth/auth.service';
 import { useNavigation } from '@react-navigation/native';
-import { RootStackParamList, RootStackScreenProps } from '@/navigation/types';
+import { RootStackParamList } from '@/navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { clearSession } from '@/store/auth/auth.slice';
+import { toast } from '@/utils/toast';
 export const ProfileScreen = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
   const [showSettings, setShowSettings] = useState(false);
   const dispatch = useAppDispatch();
@@ -25,14 +27,20 @@ export const ProfileScreen = () => {
   const handleLogout = async () => {
     const { success, message } = await signOut();
     if (success) {
+      toast.success(message);
       navigation.replace('AuthStack');
       dispatch(clearSession());
     }
+    toast.error(message);
   };
 
   return (
     <Screen>
-      <Box flexDirection="row" alignItems="center" justifyContent="space-between">
+      <Box
+        flexDirection="row"
+        alignItems="center"
+        justifyContent="space-between"
+      >
         <Text variant="header">Cá nhân</Text>
         <Pressable onPress={handleLogout}>
           <AppIcon name="sign-out" size={24} color={colors.primary} />
@@ -42,12 +50,7 @@ export const ProfileScreen = () => {
         </Pressable>
       </Box>
 
-      <Box
-        backgroundColor="card"
-        padding="m"
-        borderRadius={16}
-        marginTop="m"
-      >
+      <Box backgroundColor="card" padding="m" borderRadius={16} marginTop="m">
         <Text variant="body">Trần Thanh Lộc</Text>
         <Text variant="body" color="secondaryText" marginTop="s">
           tranthanhloc@email.com
@@ -61,25 +64,19 @@ export const ProfileScreen = () => {
             {(['system', 'light', 'dark'] as ThemeMode[]).map((mode, index) => {
               const isActive = themeMode === mode;
               return (
-                <Pressable
-                  key={mode}
-                  onPress={() => handleThemeChange(mode)}
-                >
+                <Pressable key={mode} onPress={() => handleThemeChange(mode)}>
                   <Box
                     backgroundColor={isActive ? 'primary' : 'card'}
                     padding="s"
                     borderRadius={12}
                     marginRight={index < 2 ? 's' : undefined}
                   >
-                    <Text
-                      variant="body"
-                      color={isActive ? 'main' : 'text'}
-                    >
+                    <Text variant="body" color={isActive ? 'main' : 'text'}>
                       {mode === 'system'
                         ? 'Hệ thống'
                         : mode === 'light'
-                          ? 'Sáng'
-                          : 'Tối'}
+                        ? 'Sáng'
+                        : 'Tối'}
                     </Text>
                   </Box>
                 </Pressable>
@@ -91,34 +88,19 @@ export const ProfileScreen = () => {
 
       <Box marginTop="m">
         <Text variant="body">Cài đặt</Text>
-        <Box
-          backgroundColor="card"
-          padding="m"
-          borderRadius={14}
-          marginTop="s"
-        >
+        <Box backgroundColor="card" padding="m" borderRadius={14} marginTop="s">
           <Text variant="body">Thông tin tài khoản</Text>
           <Text variant="body" color="secondaryText">
             Cập nhật hồ sơ
           </Text>
         </Box>
-        <Box
-          backgroundColor="card"
-          padding="m"
-          borderRadius={14}
-          marginTop="s"
-        >
+        <Box backgroundColor="card" padding="m" borderRadius={14} marginTop="s">
           <Text variant="body">Thông báo</Text>
           <Text variant="body" color="secondaryText">
             Quản lý nhắc nhở
           </Text>
         </Box>
-        <Box
-          backgroundColor="card"
-          padding="m"
-          borderRadius={14}
-          marginTop="s"
-        >
+        <Box backgroundColor="card" padding="m" borderRadius={14} marginTop="s">
           <Text variant="body">Bảo mật</Text>
           <Text variant="body" color="secondaryText">
             Đổi mật khẩu, xác thực

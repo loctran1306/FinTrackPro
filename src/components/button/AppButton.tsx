@@ -1,4 +1,4 @@
-import { COLORS, Theme } from '@/theme';
+import { Theme } from '@/theme';
 import { RADIUS, SHADOW, SPACING } from '@/theme/constant';
 import { BoxProps, useTheme } from '@shopify/restyle';
 import { Box } from '@theme/components';
@@ -8,7 +8,6 @@ import {
   Pressable,
   PressableProps,
   StyleProp,
-  StyleSheet,
   ViewStyle,
 } from 'react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';

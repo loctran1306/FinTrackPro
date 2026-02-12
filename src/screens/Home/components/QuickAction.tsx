@@ -1,15 +1,12 @@
-import AppBottomSheet from '@/components/common/AppBottomSheet';
 import AppIcon from '@/components/common/AppIcon';
 import SpeedDialWrapper from '@/components/common/SpeedDialWrapper';
+import { WALLET_TYPES } from '@/constants/wallet';
 import { RootStackParamList } from '@/navigation/types';
 import { Theme } from '@/theme';
 import { Box, Text } from '@/theme/components';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
-import { useRef } from 'react';
-import BottomSheet from '@gorhom/bottom-sheet';
-import { WALLET_TYPES } from '@/constants/wallet';
 
 type Props = {
   onCreateWallet: (type: keyof typeof WALLET_TYPES) => void;

@@ -1,6 +1,4 @@
 import { transactionService } from '@/services/transaction/transaction.service';
-import { walletService } from '@/services/wallet/wallet.service';
-import { WalletTransferType } from '@/services/wallet/wallet.type';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
 export const getTransactionsThunk = createAsyncThunk(

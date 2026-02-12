@@ -14,13 +14,14 @@ import React, { useCallback, useRef, useState } from 'react';
 import { Alert, Image, Platform, StyleSheet } from 'react-native';
 import 'react-native-url-polyfill/auto';
 
-
 export default function LoginScreen({ navigation }: any) {
   const { colors } = useTheme<Theme>();
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
   const [loginComplete, setLoginComplete] = useState(false);
-  const loginResultRef = useRef<{ session: any; error: string | null } | null>(null);
+  const loginResultRef = useRef<{ session: any; error: string | null } | null>(
+    null,
+  );
 
   const handleLogin = async () => {
     setLoading(true);
@@ -30,8 +31,12 @@ export default function LoginScreen({ navigation }: any) {
     try {
       const { session, error } = await signInWithGoogle();
       loginResultRef.current = { session, error };
-    } catch (err) {
-      loginResultRef.current = { session: null, error: 'Đã có lỗi hệ thống xảy ra' };
+    } catch (error) {
+      console.log(error);
+      loginResultRef.current = {
+        session: null,
+        error: 'Đã có lỗi hệ thống xảy ra',
+      };
     } finally {
       // API đã trả về kết quả (dù thành công hay thất bại)
       setLoginComplete(true);
@@ -95,11 +100,16 @@ export default function LoginScreen({ navigation }: any) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderWidth: 0.5,
-                borderColor: 'secondaryText'
+                borderColor: 'secondaryText',
               }}
             >
               <Box flexDirection="row" alignItems="center">
-                <AppIcon name="google" size={20} color="#4285F4" family="brands" />
+                <AppIcon
+                  name="google"
+                  size={20}
+                  color="#4285F4"
+                  family="brands"
+                />
                 <Text variant="subheader" color="text" marginLeft="s">
                   Tiếp tục với Google
                 </Text>
@@ -109,7 +119,7 @@ export default function LoginScreen({ navigation }: any) {
         </Box>
 
         <Text variant="label" textAlign="center" color="secondaryText">
-          Bằng cách đăng nhập, bạn đồng ý với {"\n"}
+          Bằng cách đăng nhập, bạn đồng ý với {'\n'}
           <Text color="primary">Điều khoản & Chính sách</Text> của chúng tôi
         </Text>
       </Box>
@@ -130,5 +140,4 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
-
 });

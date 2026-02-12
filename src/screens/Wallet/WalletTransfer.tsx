@@ -10,7 +10,6 @@ import CalculatorKeyboard from '@/components/keyboard/CalculatorKeyboard';
 import LoadingWithLogo from '@/components/loading/LoadingWithLogo';
 import { formatVND } from '@/helpers/currency.helper';
 import { RootStackParamList } from '@/navigation/types';
-import { walletService } from '@/services/wallet/wallet.service';
 import { WalletTransferType, WalletType } from '@/services/wallet/wallet.type';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectWallets } from '@/store/wallet/wallet.selector';

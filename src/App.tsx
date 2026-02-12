@@ -1,8 +1,18 @@
 import { ThemeProvider } from '@shopify/restyle';
 import React, { useEffect, useMemo } from 'react';
-import { AppState, AppStateStatus, LogBox, Platform, StatusBar, useColorScheme } from 'react-native';
+import {
+  AppState,
+  AppStateStatus,
+  LogBox,
+  Platform,
+  StatusBar,
+  useColorScheme,
+} from 'react-native';
 import RNBootSplash from 'react-native-bootsplash';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
 
 import { RootNavigator } from '@navigation/RootNavigator';
@@ -23,7 +33,6 @@ const AppContent = () => {
   const { top: topSafeArea } = useSafeAreaInsets();
   const systemDarkMode = useColorScheme() === 'dark';
   const themeMode = useAppSelector(state => state.global.theme);
-  const { initializing } = useAppSelector(state => state.auth);
   const dispatch = useAppDispatch();
   // Logic xác định theme nào sẽ được dùng
   const resolvedDarkMode = useMemo(() => {
@@ -41,7 +50,7 @@ const AppContent = () => {
     } else {
       console.log('Người dùng từ chối quyền thông báo');
     }
-  }
+  };
 
   useEffect(() => {
     LogBox.ignoreLogs([
@@ -60,9 +69,6 @@ const AppContent = () => {
         navigateToAuth();
       }
 
-      // if (isAuthenticated) {
-      //   dispatch(setSession(session));
-      // }
       if (Platform.OS === 'android') {
         registerNotificationFirebase();
       }
@@ -71,14 +77,13 @@ const AppContent = () => {
     init().finally(async () => {
       await RNBootSplash.hide({ fade: true });
     });
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
         console.log('nextAppState', nextAppState);
         const { isAuthenticated, session } = await checkSessionAndToken();
-        console.log('session', session);
         if (!isAuthenticated) {
           // Nếu session hết hạn, có thể điều hướng Lộc ra màn hình Login
           console.log('Session hết hạn, yêu cầu đăng nhập lại');
@@ -88,12 +93,15 @@ const AppContent = () => {
       }
     };
 
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
 
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [dispatch]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

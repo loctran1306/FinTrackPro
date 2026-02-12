@@ -21,9 +21,7 @@ import {
   getFinanceOverviewThunk,
   getWalletsThunk,
 } from '@/store/wallet/wallet.thunk';
-import { selectWallets } from '@/store/wallet/wallet.selector';
 import { Theme } from '@/theme';
-import { RADIUS, SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from '@shopify/restyle';
@@ -31,6 +29,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HistoryTransaction from '../Transaction/components/HistoryTransaction';
 import QuickAction from './components/QuickAction';
 import WalletList from './components/WalletList';
+import { SPACING } from '@/theme/constant';
 
 export const HomeScreen = () => {
   const { colors } = useTheme<Theme>();

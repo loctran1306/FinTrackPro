@@ -1,18 +1,11 @@
-import { Box, Text } from '@/theme/components';
-import Screen from '@/components/common/Screen';
-import { Pressable } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '@shopify/restyle';
-import { Theme } from '@/theme';
-import AppIcon from '@/components/common/AppIcon';
 import AppButton from '@/components/button/AppButton';
 import AppHeader from '@/components/common/AppHeader';
+import Screen from '@/components/common/Screen';
 import DateTimePickerBottomSheet from '@/components/modals/DateTimePickerBottomSheet';
+import { Box, Text } from '@/theme/components';
 import { useState } from 'react';
 
 const AddTransaction = () => {
-  const navigation = useNavigation();
-  const { colors } = useTheme<Theme>();
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const handleDateTimeConfirm = (date: Date) => {

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Dimensions,
   ScrollView,
   ScrollViewProps,
   StyleSheet,
@@ -42,7 +41,7 @@ const REFRESH_THRESHOLD = 90;
 const AppScrollView = ({
   onRefresh,
   children,
-  refreshThreshold = REFRESH_THRESHOLD,
+  refreshThreshold: _refreshThreshold = REFRESH_THRESHOLD,
   refreshBackground,
   insetTop = true,
   ...props

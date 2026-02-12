@@ -1,4 +1,4 @@
-import { COLORS, Theme } from '@/theme';
+import { Theme } from '@/theme';
 import { Box, Text } from '@/theme/components';
 import { RADIUS } from '@/theme/constant';
 import { toast } from '@/utils/toast';
@@ -21,17 +21,32 @@ interface CalculatorKeyboardProps {
 const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
   onValueChange,
   onDone,
-  initialValue = ''
+  initialValue = '',
 }) => {
   const { colors } = useTheme<Theme>();
   const [expr, setExpr] = useState<string>(initialValue);
 
   const buttons: string[] = [
-    '7', '8', '9', 'DEL',
-    '4', '5', '6', '/',   // Thêm Chia
-    '1', '2', '3', '*',   // Thêm Nhân
-    '.', '0', '-', '+',   // Dời Trừ và Cộng xuống đây
-    'C', '', '=', 'OK'     // Thêm nút C (Clear) để xóa sạch nếu gõ sai quá nhiều
+    '7',
+    '8',
+    '9',
+    'DEL',
+    '4',
+    '5',
+    '6',
+    '/', // Thêm Chia
+    '1',
+    '2',
+    '3',
+    '*', // Thêm Nhân
+    '.',
+    '0',
+    '-',
+    '+', // Dời Trừ và Cộng xuống đây
+    'C',
+    '',
+    '=',
+    'OK', // Thêm nút C (Clear) để xóa sạch nếu gõ sai quá nhiều
   ];
 
   const handlePress = (btn: string): void => {
@@ -48,14 +63,17 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
         // Sau đó Lộc dùng toDbAmount(Number(result)) để lưu 100 thay vì 100,000
         onDone(Number(result));
         return;
-      } catch (e) {
+      } catch (error) {
+        console.log(error);
         toast.error('Biểu thức chưa đúng.');
         return;
       }
     } else if (btn === '=') {
       try {
         newExpr = evaluate(expr || '0').toString();
-      } catch (e) {
+      } catch (error) {
+        console.log(error);
+        toast.error('Biểu thức chưa đúng.');
         newExpr = 'Error';
       }
     } else {
@@ -79,23 +97,35 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
   const formatDisplay = (val: string): string => {
     if (!val || val === 'Error') return val;
     // Tách phần số và toán tử để format riêng biệt
-    return val.replace(/\d+/g, (n) =>
-      new Intl.NumberFormat('vi-VN').format(Number(n))
+    return val.replace(/\d+/g, n =>
+      new Intl.NumberFormat('vi-VN').format(Number(n)),
     );
   };
 
   return (
-    <Animated.View entering={SlideInDown.duration(300)} exiting={SlideOutDown.duration(300)}>
-      <Box backgroundColor="main" gap='s'>
-        <Box paddingHorizontal='m'>
+    <Animated.View
+      entering={SlideInDown.duration(300)}
+      exiting={SlideOutDown.duration(300)}
+    >
+      <Box backgroundColor="main" gap="s">
+        <Box paddingHorizontal="m">
           <Text textAlign="center" color="primary">
             {formatDisplay(expr) || '0'}
           </Text>
         </Box>
 
-        <Box width="100%" flexDirection="row" flexWrap="wrap" justifyContent="center" alignItems="center" gap="s">
-          {buttons.map((btn) => {
-            const isOperator = ['+', '-', '*', '/', '=', 'DEL', 'C'].includes(btn);
+        <Box
+          width="100%"
+          flexDirection="row"
+          flexWrap="wrap"
+          justifyContent="center"
+          alignItems="center"
+          gap="s"
+        >
+          {buttons.map(btn => {
+            const isOperator = ['+', '-', '*', '/', '=', 'DEL', 'C'].includes(
+              btn,
+            );
             const isOK = btn === 'OK';
 
             return (
@@ -103,17 +133,24 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
                 key={btn}
                 onPress={() => handlePress(btn)}
                 style={{
-                  width: (width) / 5,
+                  width: width / 5,
                   height: 40,
                   justifyContent: 'center',
                   alignItems: 'center',
-                  backgroundColor: isOperator ? colors.highlight : isOK ? colors.primary : colors.main,
+                  backgroundColor: isOperator
+                    ? colors.highlight
+                    : isOK
+                    ? colors.primary
+                    : colors.main,
                   borderRadius: RADIUS.m,
                   padding: 0,
-
                 }}
               >
-                <Text variant="body" color={isOK ? 'white' : 'text'} fontFamily="semiBold">
+                <Text
+                  variant="body"
+                  color={isOK ? 'white' : 'text'}
+                  fontFamily="semiBold"
+                >
                   {btn === '*' ? 'x' : btn}
                 </Text>
               </AppButton>

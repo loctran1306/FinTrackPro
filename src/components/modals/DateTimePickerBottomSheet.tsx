@@ -1,18 +1,17 @@
-import React, { useRef, useState, useCallback, memo } from 'react';
+import { FONTS, Theme } from '@/theme';
+import { RADIUS } from '@/theme/constant';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text } from '@theme/components';
+import LunarCalendar from 'lunar-calendar';
+import moment from 'moment';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   useWindowDimensions,
 } from 'react-native';
-import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { CalendarList } from 'react-native-calendars';
-import moment from 'moment';
-import LunarCalendar from 'lunar-calendar';
-import { Box, Text } from '@theme/components';
-import { RADIUS } from '@/theme/constant';
-import { useTheme } from '@shopify/restyle';
-import { FONTS, Theme } from '@/theme';
+import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import AppButton from '../button/AppButton';
 
 interface Props {
@@ -43,11 +42,9 @@ const DateTimePickerBottomSheet: React.FC<Props> = ({
   const [selectedDate, setSelectedDate] = useState(
     moment(initialDate).format('YYYY-MM-DD'),
   );
-  const [hour, setHour] = useState(moment(initialDate).hour());
-  const [minute, setMinute] = useState(moment(initialDate).minute());
 
   const handleConfirm = () => {
-    const finalDate = moment(selectedDate).hour(hour).minute(minute).toDate();
+    const finalDate = moment(selectedDate).toDate();
     onConfirm(finalDate);
     onClose();
   };
@@ -123,30 +120,30 @@ const DateTimePickerBottomSheet: React.FC<Props> = ({
   );
 
   // Render danh sách chọn giờ/phút kiểu cuộn
-  const renderTimePicker = (
-    total: number,
-    current: number,
-    setFn: (val: number) => void,
-  ) => (
-    <ScrollView showsVerticalScrollIndicator={false} style={styles.timeScroll}>
-      {Array.from({ length: total }).map((_, i) => (
-        <TouchableOpacity
-          key={i}
-          onPress={() => setFn(i)}
-          style={[styles.timeItem, current === i && styles.timeItemActive]}
-        >
-          <Text
-            style={{
-              color: current === i ? '#ff7675' : '#ccc',
-              fontWeight: current === i ? 'bold' : 'normal',
-            }}
-          >
-            {i < 10 ? `0${i}` : i}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  );
+  //   const renderTimePicker = (
+  //     total: number,
+  //     current: number,
+  //     setFn: (val: number) => void,
+  //   ) => (
+  //     <ScrollView showsVerticalScrollIndicator={false} style={styles.timeScroll}>
+  //       {Array.from({ length: total }).map((_, i) => (
+  //         <TouchableOpacity
+  //           key={i}
+  //           onPress={() => setFn(i)}
+  //           style={[styles.timeItem, current === i && styles.timeItemActive]}
+  //         >
+  //           <Text
+  //             style={{
+  //               color: current === i ? '#ff7675' : '#ccc',
+  //               fontWeight: current === i ? 'bold' : 'normal',
+  //             }}
+  //           >
+  //             {i < 10 ? `0${i}` : i}
+  //           </Text>
+  //         </TouchableOpacity>
+  //       ))}
+  //     </ScrollView>
+  //   );
 
   if (!visible) return null;
 
