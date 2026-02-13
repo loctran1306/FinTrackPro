@@ -29,3 +29,13 @@ export type TransactionState = {
   limit: number;
   total: number;
 };
+
+export type CreateTransactionType = {
+  type: 'expense' | 'income';
+  amount: number;
+  note: string;
+  category_id: string | null;
+  date: string;
+  wallet_id: string;
+  user_id: string;
+};

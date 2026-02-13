@@ -17,7 +17,7 @@ import { toast } from '@/utils/toast';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text } from '@theme/components';
 import React, { useCallback, useRef, useState } from 'react';
-import { Alert, Image, Platform, StyleSheet } from 'react-native';
+import { Image, Platform, StyleSheet } from 'react-native';
 import 'react-native-url-polyfill/auto';
 
 export default function LoginScreen({ navigation }: any) {

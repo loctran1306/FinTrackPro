@@ -3,6 +3,7 @@ import globalReducer from './global/global.slice';
 import authReducer from './auth/auth.slice';
 import walletReducer from './wallet/wallet.slice';
 import transactionReducer from './transaction/transaction.slice';
+import categoryReducer from './category/category.slice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     auth: authReducer,
     wallet: walletReducer,
     transaction: transactionReducer,
+    category: categoryReducer,
   },
 });
 

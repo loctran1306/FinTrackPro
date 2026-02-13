@@ -1,4 +1,5 @@
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import React, { useRef } from 'react';
 import Animated, { withTiming } from 'react-native-reanimated';
 import { Box } from '@/theme/components';
 import {
@@ -22,7 +23,7 @@ type AppSwipeableProps = {
   swipeableKey: string;
   children: React.ReactNode;
   onPress: () => void;
-  onDelete: () => void;
+  onDelete: (reset: () => void) => void;
   style?: StyleProp<ViewStyle>;
   backgroundColor?: keyof Theme['colors'];
 };
@@ -111,12 +112,30 @@ const AppSwipeable = ({
     ReactNativeHapticFeedback.trigger('selection', hapticOptions);
   };
 
+  const originalHeight = useSharedValue(0);
+
+  const swipeableRef = useRef<any>(null);
+
+  const reset = () => {
+    scale.value = withTiming(1);
+    height.value = withTiming(originalHeight.value, { duration: 180 });
+    opacity.value = withTiming(1, { duration: 180 });
+    swipeableRef.current?.close();
+  };
+
+  const confirmDelete = () => {
+    onDelete(reset);
+  };
+
   const handleDeletePress = () => {
     ReactNativeHapticFeedback.trigger('impactMedium', hapticOptions);
+    originalHeight.value = height.value;
     scale.value = withTiming(0.95);
     height.value = withTiming(0, { duration: 180 });
-    opacity.value = withTiming(0, { duration: 180 }, () => {
-      runOnJS(onDelete)();
+    opacity.value = withTiming(0, { duration: 180 }, finished => {
+      if (finished) {
+        runOnJS(confirmDelete)();
+      }
     });
   };
 
@@ -130,6 +149,7 @@ const AppSwipeable = ({
       }}
     >
       <ReanimatedSwipeable
+        ref={swipeableRef}
         key={swipeableKey}
         renderRightActions={progress => (
           <RightAction progress={progress} handlePress={handleDeletePress} />

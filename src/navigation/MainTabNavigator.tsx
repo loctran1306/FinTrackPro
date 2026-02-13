@@ -127,7 +127,7 @@ export const MainTabNavigator = () => {
                 accessibilityLabel={props.accessibilityLabel}
                 accessibilityState={props.accessibilityState}
                 testID={props.testID}
-                onPress={() => rootNavigation.navigate('AddTransaction')}
+                onPress={() => rootNavigation.navigate('TransactionForm')}
                 style={[styles.addButton, { backgroundColor: '#ffffff' }]}
               >
                 <AppIcon name="plus" size={24} color={colors.primary} />

@@ -5,6 +5,7 @@ import {
   BottomSheetBackdropProps,
   BottomSheetModal,
   BottomSheetScrollView,
+  BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import { useTheme } from '@shopify/restyle';
 import React, {
@@ -28,10 +29,27 @@ interface AppBottomSheetProps {
   onClose?: () => void;
   /** Dùng để xử lý khi snap points bị đo sai (sheet mở nhỏ) */
   enableDynamicSizing?: boolean;
+  /** Có cho phép cuộn nội dung không (mặc định true) */
+  isScrollable?: boolean;
+  /** Ẩn thanh kéo (handle indicator) */
+  hideIndicator?: boolean;
+  /** Ẩn backdrop */
+  hideBackdrop?: boolean;
 }
 
 const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>(
-  ({ children, snapPoints, onClose, enableDynamicSizing = false }, ref) => {
+  (
+    {
+      children,
+      snapPoints,
+      onClose,
+      enableDynamicSizing = false,
+      isScrollable = true,
+      hideIndicator = false,
+      hideBackdrop = false,
+    },
+    ref,
+  ) => {
     const { colors } = useTheme<Theme>();
     const modalRef = useRef<BottomSheetModal>(null);
 
@@ -58,7 +76,9 @@ const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>(
           appearsOnIndex={0}
           opacity={0.4}
           pressBehavior="close"
-          style={styles.backdrop}
+          style={{
+            backgroundColor: hideBackdrop ? 'transparent' : 'rgba(0,0,0,1)',
+          }}
         />
       ),
       [],
@@ -79,6 +99,25 @@ const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>(
       };
     }, []);
 
+    const renderContent = () => {
+      if (isScrollable) {
+        return (
+          <BottomSheetScrollView
+            style={[
+              styles.content,
+              enableDynamicSizing && { minHeight: contentMinHeight },
+            ]}
+            keyboardShouldPersistTaps="handled"
+          >
+            {children}
+          </BottomSheetScrollView>
+        );
+      }
+      return (
+        <BottomSheetView style={styles.content}>{children}</BottomSheetView>
+      );
+    };
+
     return (
       <BottomSheetModal
         ref={modalRef}
@@ -87,7 +126,9 @@ const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>(
         enablePanDownToClose
         backdropComponent={renderBackdrop}
         onDismiss={onClose}
-        handleIndicatorStyle={styles.indicator}
+        handleIndicatorStyle={
+          hideIndicator ? { width: 0, height: 0, opacity: 0 } : styles.indicator
+        }
         backgroundStyle={{
           backgroundColor: colors.main,
           borderTopLeftRadius: 30,
@@ -98,24 +139,13 @@ const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>(
         android_keyboardInputMode="adjustResize"
         enableBlurKeyboardOnGesture
       >
-        <BottomSheetScrollView
-          style={[
-            styles.content,
-            enableDynamicSizing && { minHeight: contentMinHeight },
-          ]}
-          keyboardShouldPersistTaps="handled"
-        >
-          {children}
-        </BottomSheetScrollView>
+        {renderContent()}
       </BottomSheetModal>
     );
   },
 );
 
 const styles = StyleSheet.create({
-  backdrop: {
-    backgroundColor: 'rgba(0,0,0,1)',
-  },
   indicator: {
     backgroundColor: COLORS.primary,
     width: 40,

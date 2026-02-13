@@ -167,8 +167,12 @@ const AppScrollView = ({
           />
         </Rect>
       </Canvas>
-      <Box style={styles.balanceDecorationTop} />
-      <Box style={styles.balanceDecorationBottom} />
+      {onRefresh && refreshBackground && (
+        <>
+          <Box style={styles.balanceDecorationTop} />
+          <Box style={styles.balanceDecorationBottom} />
+        </>
+      )}
 
       {/* Chỉ hiện loader nếu có truyền hàm onRefresh */}
       {onRefresh && (

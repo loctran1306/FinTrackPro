@@ -16,6 +16,9 @@ export const formatVND = (
   if (hidden) {
     return '**********';
   }
+  if (dbAmount === 0) {
+    return '0';
+  }
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',

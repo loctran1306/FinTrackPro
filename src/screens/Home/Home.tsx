@@ -12,7 +12,7 @@ import AppIcon from '@/components/common/AppIcon';
 import LoadingWithLogo from '@/components/loading/LoadingWithLogo';
 import { WALLET_TYPES } from '@/constants/wallet';
 import { formatVND } from '@/helpers/currency.helper';
-import { TransactionType } from '@/services/transaction/transaction.type';
+import { getCategoriesThunk } from '@/store/category/category.thunk';
 import { setHiddenCurrency } from '@/store/global/global.slice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { getTransactionsThunk } from '@/store/transaction/transaction.thunk';
@@ -22,6 +22,7 @@ import {
   getWalletsThunk,
 } from '@/store/wallet/wallet.thunk';
 import { Theme } from '@/theme';
+import { SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTheme } from '@shopify/restyle';
@@ -29,12 +30,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HistoryTransaction from '../Transaction/components/HistoryTransaction';
 import QuickAction from './components/QuickAction';
 import WalletList from './components/WalletList';
-import { SPACING } from '@/theme/constant';
 
 export const HomeScreen = () => {
   const { colors } = useTheme<Theme>();
   const { top: topSafeArea } = useSafeAreaInsets();
-  const [items, setItems] = useState<TransactionType[]>([]);
   const [selectedWalletType, setSelectedWalletType] = useState<
     keyof typeof WALLET_TYPES | null
   >(null);
@@ -46,13 +45,6 @@ export const HomeScreen = () => {
   const { hiddenCurrency } = useAppSelector(state => state.global);
   const { financeOverview } = useAppSelector(state => state.wallet);
   const { session } = useAppSelector(state => state.auth);
-  const { transactions: transactionList } = useAppSelector(
-    state => state.transaction,
-  );
-
-  useEffect(() => {
-    setItems(transactionList);
-  }, [transactionList]);
 
   const getData = async () => {
     dispatch(getFinanceOverviewThunk());
@@ -64,9 +56,13 @@ export const HomeScreen = () => {
     }
   };
 
-  // useEffect(() => {
-  //   getData();
-  // }, []);
+  const handleGetCategories = async () => {
+    dispatch(getCategoriesThunk());
+  };
+
+  useEffect(() => {
+    handleGetCategories();
+  }, []);
 
   const handleRefresh = async () => {
     getData();
@@ -125,7 +121,7 @@ export const HomeScreen = () => {
         refreshBackground={colors.highlight}
         insetTop={false}
         contentContainerStyle={{
-          paddingBottom: bottomTabBarHeight,
+          paddingBottom: bottomTabBarHeight + SPACING.m,
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -196,7 +192,7 @@ export const HomeScreen = () => {
           <Text paddingHorizontal="m" variant="subheader">
             Lịch sử giao dịch
           </Text>
-          <HistoryTransaction transactions={items} setTransactions={setItems} />
+          <HistoryTransaction />
         </Box>
       </AppScrollView>
       <AppBottomSheet

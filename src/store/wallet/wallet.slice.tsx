@@ -15,7 +15,17 @@ const initialState: WalletState = {
 const walletSlice = createSlice({
   name: 'wallet',
   initialState,
-  reducers: {},
+  reducers: {
+    updateWallet: (state, { payload: wallet }) => {
+      if (!state.wallets) return;
+      state.wallets = state.wallets.map(w => {
+        if (w.id === wallet.id) {
+          return wallet;
+        }
+        return w;
+      });
+    },
+  },
   extraReducers: builder => {
     builder.addCase(getFinanceOverviewThunk.fulfilled, (state, action) => {
       state.financeOverview = action.payload;
@@ -51,5 +61,5 @@ const walletSlice = createSlice({
   },
 });
 
-export const {} = walletSlice.actions;
+export const { updateWallet } = walletSlice.actions;
 export default walletSlice.reducer;

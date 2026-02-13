@@ -1,3 +1,4 @@
+import { TransactionType } from '@/services/transaction/transaction.type';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import {
   CompositeScreenProps,
@@ -24,7 +25,7 @@ export type RootStackParamList = {
   AuthStack: undefined;
   // MainTab chứa các màn hình Tab, sử dụng NavigatorScreenParams để lồng vào nhau
   MainTab: NavigatorScreenParams<MainTabParamList>;
-  AddTransaction: undefined;
+  TransactionForm: { transaction?: TransactionType } | undefined;
   TransactionDetail: { transactionId: string }; // Ví dụ: màn hình cần ID để hiển thị chi tiết
   AddWallet: { type: 'cash' | 'bank' | 'credit' };
   WalletTransfer: undefined;
