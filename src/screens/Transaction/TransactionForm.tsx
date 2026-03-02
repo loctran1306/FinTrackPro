@@ -28,7 +28,7 @@ import { Box, Text } from '@/theme/components';
 import { RADIUS, SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
 import moment from 'moment';
 import React, { useEffect, useMemo, useRef, useState } from 'react';

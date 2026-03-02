@@ -1,12 +1,11 @@
-import AppBottomSheet, { AppBottomSheetRef } from '@/components/common/AppBottomSheet';
-import { RADIUS, SPACING } from '@/theme/constant';
-import { Theme } from '@/theme';
-import { Box, Text } from '@theme/components';
-import { useTheme } from '@shopify/restyle';
-import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
 import AppButton from '@/components/button/AppButton';
+import AppBottomSheet, { AppBottomSheetRef } from '@/components/common/AppBottomSheet';
 import AppIcon from '@/components/common/AppIcon';
+import { Theme } from '@/theme';
+import { SPACING } from '@/theme/constant';
+import { useTheme } from '@shopify/restyle';
+import { Box, Text } from '@theme/components';
+import React, { useEffect, useRef, useState } from 'react';
 
 const MONTH_LABELS = [
   'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',

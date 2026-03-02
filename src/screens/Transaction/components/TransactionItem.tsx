@@ -1,18 +1,18 @@
+import AppIcon from "@/components/common/AppIcon";
 import AppSwipeable from "@/components/swipeable/Swipeable";
 import { addOpacity } from "@/helpers/color.helper";
+import { formatVND } from "@/helpers/currency.helper";
+import { formatTime } from "@/helpers/time.helper";
 import { TransactionType } from "@/services/transaction/transaction.type";
 import { useAppDispatch } from "@/store/hooks";
 import { deleteTransactionThunk } from "@/store/transaction/transaction.thunk";
+import { Theme } from "@/theme";
 import { Box, Text } from "@/theme/components";
 import { SPACING } from "@/theme/constant";
 import { toast } from "@/utils/toast";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "@shopify/restyle";
-import { Theme } from "@/theme";
 import { StyleSheet } from "react-native";
-import AppIcon from "@/components/common/AppIcon";
-import { formatVND } from "@/helpers/currency.helper";
-import { formatTime } from "@/helpers/time.helper";
 
 type TransactionItemProps = {
     transaction: TransactionType;
@@ -32,7 +32,7 @@ const TransactionItem = ({ transaction, flashListRef }: TransactionItemProps) =>
             toast.error('Xóa giao dịch thất bại');
             reset();
             setTimeout(() => {
-                flashListRef && flashListRef.current?.scrollToOffset({ offset: 0, animated: true });
+                flashListRef?.current?.scrollToOffset({ offset: 0, animated: true });
             }, 100);
         }
     }

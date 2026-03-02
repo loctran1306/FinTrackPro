@@ -1,44 +1,39 @@
 import AppButton from '@/components/button/AppButton';
 import AppIcon from '@/components/common/AppIcon';
 import AppInput from '@/components/common/AppInput';
+import AppScrollView from '@/components/common/AppScrollView';
 import Screen from '@/components/common/Screen';
 import IconPickerBottomSheet, {
   IconPickerBottomSheetRef,
 } from '@/components/modals/IconPickerBottomSheet';
 import { CATEGORY_COLORS } from '@/constants/category';
-import {
-  convertToDbAmount,
-  convertFromDbAmount,
-  formatVNDInput,
-  parseVNDInput,
-  formatVND,
-} from '@/helpers/currency.helper';
 import { addOpacity } from '@/helpers/color.helper';
+import {
+  formatVND,
+  formatVNDInput,
+  parseVNDInput
+} from '@/helpers/currency.helper';
+import { RootStackParamList } from '@/navigation/types';
 import categoryService from '@/services/category/category.service';
-import { RADIUS, SPACING } from '@/theme/constant';
+import { selectCategoryById } from '@/store/category/category.selector';
+import { getCategoriesThunk } from '@/store/category/category.thunk';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { Theme } from '@/theme';
-import { Box, Text } from '@theme/components';
+import { RADIUS, SPACING } from '@/theme/constant';
+import { toast } from '@/utils/toast';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
+import { Box, Text } from '@theme/components';
+import { useFormik } from 'formik';
 import React, { useRef, useState } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Alert,
-  Switch,
-  TouchableOpacity,
-  StyleSheet,
   ScrollView,
+  Switch,
+  TouchableOpacity
 } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/types';
-import { toast } from '@/utils/toast';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { getCategoriesThunk } from '@/store/category/category.thunk';
-import AppScrollView from '@/components/common/AppScrollView';
-import { selectCategoryById } from '@/store/category/category.selector';
-import { CategoryItem } from '@/services/category/category.type';
-import { useFormik } from 'formik';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Yup from 'yup';
-import { COLORS } from '@/theme/index';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EditCategory'>;
 
