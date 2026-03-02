@@ -47,7 +47,7 @@ const AppScrollView = ({
   ...props
 }: AppScrollViewProps) => {
   const { colors } = useTheme<Theme>();
-  const { top } = useSafeAreaInsets();
+  const { top: topSafeArea } = useSafeAreaInsets();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const scrollY = useSharedValue(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -119,11 +119,11 @@ const AppScrollView = ({
     const spin = refreshing
       ? `${rotation.value}deg`
       : `${interpolate(
-          scrollY.value,
-          [-REFRESH_THRESHOLD, 0],
-          [360, 0],
-          Extrapolation.CLAMP,
-        )}deg`;
+        scrollY.value,
+        [-REFRESH_THRESHOLD, 0],
+        [360, 0],
+        Extrapolation.CLAMP,
+      )}deg`;
 
     // 3. Tính toán Opacity
     let opacity = interpolate(
@@ -177,7 +177,7 @@ const AppScrollView = ({
       {/* Chỉ hiện loader nếu có truyền hàm onRefresh */}
       {onRefresh && (
         <Box
-          style={[styles.loaderContainer, { top: !insetTop ? top + 20 : 40 }]}
+          style={[styles.loaderContainer, { top: !insetTop ? topSafeArea + 20 : 40 }]}
         >
           <LogoRefresh style={animatedIconStyle} />
         </Box>

@@ -8,6 +8,18 @@ export const convertFromDbAmount = (dbAmount: number): number => {
   return dbAmount * 1000;
 };
 
+// Parse chuỗi nhập (vd: "8.000.000" hoặc "8000000") → số VND (UI)
+export const parseVNDInput = (input: string): number => {
+  const cleaned = input.replace(/\D/g, '');
+  return cleaned ? parseInt(cleaned, 10) : 0;
+};
+
+// Format số để hiển thị input (vd: 8000000 → "8.000.000")
+export const formatVNDInput = (amount: number): string => {
+  if (amount <= 0) return '';
+  return new Intl.NumberFormat('vi-VN').format(amount);
+};
+
 // Format số tiền thành định dạng VND
 export const formatVND = (
   dbAmount: number,

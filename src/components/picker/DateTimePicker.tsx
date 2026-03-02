@@ -19,6 +19,8 @@ interface DateTimePickerProps {
   numberMonthBefore?: number;
   numberMonthFuture?: number;
   disableFuture?: boolean;
+  /** Ẩn TimePicker, chỉ chọn ngày (hoặc tháng) */
+  hideTimePicker?: boolean;
 }
 
 const DateTimePicker: FC<DateTimePickerProps> = ({
@@ -27,6 +29,7 @@ const DateTimePicker: FC<DateTimePickerProps> = ({
   numberMonthBefore = 24,
   numberMonthFuture = 0,
   disableFuture = true,
+  hideTimePicker = false,
 }) => {
   const { colors } = useTheme<Theme>();
   const { width } = useWindowDimensions();
@@ -155,15 +158,17 @@ const DateTimePicker: FC<DateTimePickerProps> = ({
 
   return (
     <Box height="100%">
-      <Box alignItems="center">
-        <TimePicker
-          hour={hour}
-          minute={minute}
-          setHour={setHour}
-          setMinute={setMinute}
-          hiddenTitle
-        />
-      </Box>
+      {!hideTimePicker && (
+        <Box alignItems="center">
+          <TimePicker
+            hour={hour}
+            minute={minute}
+            setHour={setHour}
+            setMinute={setMinute}
+            hiddenTitle
+          />
+        </Box>
+      )}
       <CalendarList
         current={selectedDate}
         maxDate={maxDate}

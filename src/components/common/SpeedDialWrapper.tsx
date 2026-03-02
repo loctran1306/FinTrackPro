@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import {
+  Dimensions,
+  Pressable,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -42,10 +49,20 @@ const SpeedDialWrapper = ({
     animation.value = isOpen ? withSpring(0) : withSpring(1);
   };
 
+  const closeMenu = useCallback(() => {
+    setIsOpen(false);
+    animation.value = withSpring(0);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      return closeMenu;
+    }, [closeMenu])
+  );
+
   const isLabelRight = labelPosition === 'right';
   const isDirectionUp = direction === 'up';
 
-  // Tạo component riêng để tránh lỗi React Hooks
   const MenuItem = ({
     item,
     index,
@@ -108,48 +125,69 @@ const SpeedDialWrapper = ({
     );
   };
 
-  return (
-    <Box alignItems="center" justifyContent="center">
-      <Box
-        style={[
-          styles.optionsWrapper,
-          isDirectionUp ? { top: 25 } : { bottom: 25 },
-        ]}
-        pointerEvents={isOpen ? 'auto' : 'none'}
-      >
-        {options.map((item, index) => (
-          <MenuItem key={index} item={item} index={index} />
-        ))}
-      </Box>
+  const { width: W, height: H } = Dimensions.get('window');
 
-      <TouchableOpacity activeOpacity={0.8} onPress={toggleMenu}>
+  return (
+    <View style={styles.wrapper}>
+      {isOpen && options.length > 0 && (
+        <Pressable
+          style={[styles.overlay, { left: -W, top: -H, width: W * 3, height: H * 3 }]}
+          onPress={closeMenu}
+        />
+      )}
+      <Box alignItems="center" justifyContent="center" style={styles.content}>
         <Box
-          width={50}
-          height={50}
-          borderRadius={SPACING.m}
-          justifyContent="center"
-          alignItems="center"
-          style={{ backgroundColor: isOpen ? COLORS.highlight : mainColor }}
+          style={[
+            styles.optionsWrapper,
+            isDirectionUp ? { top: 25 } : { bottom: 25 },
+          ]}
+          pointerEvents={isOpen ? 'auto' : 'none'}
         >
-          <Animated.View
-            style={useAnimatedStyle(() => ({
-              transform: [
-                {
-                  rotate:
-                    options.length > 0 ? `${animation.value * 45}deg` : '0deg',
-                },
-              ],
-            }))}
-          >
-            {mainIcon}
-          </Animated.View>
+          {options.map((item, index) => (
+            <MenuItem key={index} item={item} index={index} />
+          ))}
         </Box>
-      </TouchableOpacity>
-    </Box>
+
+        <TouchableOpacity activeOpacity={0.8} onPress={toggleMenu}>
+          <Box
+            width={50}
+            height={50}
+            borderRadius={SPACING.m}
+            justifyContent="center"
+            alignItems="center"
+            style={{ backgroundColor: isOpen ? COLORS.highlight : mainColor }}
+          >
+            <Animated.View
+              style={useAnimatedStyle(() => ({
+                transform: [
+                  {
+                    rotate:
+                      options.length > 0 ? `${animation.value * 45}deg` : '0deg',
+                  },
+                ],
+              }))}
+            >
+              {mainIcon}
+            </Animated.View>
+          </Box>
+        </TouchableOpacity>
+      </Box>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  wrapper: {
+    position: 'relative',
+    overflow: 'visible',
+  },
+  overlay: {
+    position: 'absolute',
+    zIndex: 998,
+  },
+  content: {
+    zIndex: 999,
+  },
   optionsWrapper: {
     position: 'absolute',
     alignItems: 'center',

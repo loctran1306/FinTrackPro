@@ -12,6 +12,7 @@ import AppIcon from '@/components/common/AppIcon';
 import LoadingWithLogo from '@/components/loading/LoadingWithLogo';
 import { WALLET_TYPES } from '@/constants/wallet';
 import { formatVND } from '@/helpers/currency.helper';
+import { RootStackParamList } from '@/navigation/types';
 import { getCategoriesThunk } from '@/store/category/category.thunk';
 import { setHiddenCurrency } from '@/store/global/global.slice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -25,13 +26,16 @@ import { Theme } from '@/theme';
 import { SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import HistoryTransaction from '../Transaction/components/HistoryTransaction';
+import HomeTransaction from './components/HomeTransaction';
 import QuickAction from './components/QuickAction';
 import WalletList from './components/WalletList';
 
 export const HomeScreen = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
   const { top: topSafeArea } = useSafeAreaInsets();
   const [selectedWalletType, setSelectedWalletType] = useState<
@@ -45,7 +49,7 @@ export const HomeScreen = () => {
   const { hiddenCurrency } = useAppSelector(state => state.global);
   const { financeOverview } = useAppSelector(state => state.wallet);
   const { session } = useAppSelector(state => state.auth);
-
+  const { time } = useAppSelector(state => state.global);
   const getData = async () => {
     dispatch(getFinanceOverviewThunk());
     if (session?.user?.id) {
@@ -57,12 +61,12 @@ export const HomeScreen = () => {
   };
 
   const handleGetCategories = async () => {
-    dispatch(getCategoriesThunk());
+    dispatch(getCategoriesThunk({ month: time.month, year: time.year }));
   };
 
   useEffect(() => {
     handleGetCategories();
-  }, []);
+  }, [time]);
 
   const handleRefresh = async () => {
     getData();
@@ -117,9 +121,9 @@ export const HomeScreen = () => {
   return (
     <Screen edges={[]} padding="none">
       <AppScrollView
+        insetTop={false}
         onRefresh={handleRefresh}
         refreshBackground={colors.highlight}
-        insetTop={false}
         contentContainerStyle={{
           paddingBottom: bottomTabBarHeight + SPACING.m,
         }}
@@ -189,10 +193,18 @@ export const HomeScreen = () => {
         <QuickAction onCreateWallet={handleCreateWallet} />
         <WalletList />
         <Box backgroundColor="main" flex={1} gap="s" paddingTop="m">
-          <Text paddingHorizontal="m" variant="subheader">
-            Lịch sử giao dịch
-          </Text>
-          <HistoryTransaction />
+          <Box flexDirection="row" justifyContent="space-between" alignItems="center" >
+            <Text paddingHorizontal="m" variant="subheader">
+              Lịch sử giao dịch
+            </Text>
+            <AppButton
+              onPress={() => navigation.navigate('HistoryTransaction')}
+              style={{ paddingVertical: 0 }}
+            >
+              <Text variant="subheader" textDecorationLine="underline" color="primary">Xem tất cả</Text>
+            </AppButton>
+          </Box>
+          <HomeTransaction />
         </Box>
       </AppScrollView>
       <AppBottomSheet

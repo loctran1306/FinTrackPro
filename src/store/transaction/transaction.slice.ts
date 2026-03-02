@@ -24,15 +24,30 @@ const transactionSlice = createSlice({
     },
   },
   extraReducers: builder => {
+    builder.addCase(getTransactionsThunk.pending, (state, action) => {
+      state.loading = true;
+    });
     builder.addCase(getTransactionsThunk.fulfilled, (state, action) => {
-      state.transactions = action.payload?.transactions || [];
-      state.page = action.payload?.page || 1;
-      state.limit = action.payload?.limit || 10;
-      state.total = action.payload?.total || 0;
+      state.loading = false;
+      if (action.payload) {
+        state.page = action.payload?.page || 1;
+        state.limit = action.payload?.limit || 10;
+        state.total = action.payload?.total || 0;
+        state.transactions = [
+          ...state.transactions,
+          ...action.payload?.transactions,
+        ];
+      }
+    });
+    builder.addCase(getTransactionsThunk.rejected, (state, action) => {
+      state.loading = false;
     });
     builder.addCase(createTransactionThunk.fulfilled, (state, action) => {
       if (action.payload) {
         state.transactions.unshift(action.payload);
+        if (state.transactions.length > state.limit) {
+          state.transactions.pop();
+        }
         state.total += 1;
       }
     });

@@ -18,6 +18,9 @@ import AddWalletScreen from '../screens/Wallet/AddWallet';
 import WalletTransferScreen from '@/screens/Wallet/WalletTransfer';
 import BalanceAdjustmentScreen from '@/screens/Balance/BalanceAdjustment';
 import LoginScreen from '@/screens/Auth/Login';
+import HistoryTransactionScreen from '@/screens/Transaction/HistoryTransaction';
+import CategoryDetailScreen from '@/screens/Statistics/CategoryDetail';
+import EditCategoryScreen from '@/screens/Statistics/EditCategory';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -41,7 +44,8 @@ export const RootNavigator = ({ isDarkMode = false }: RootNavigatorProps) => {
         initialRouteName="Splash"
         screenOptions={{
           headerShown: false,
-          animation: 'fade_from_bottom', // Hiệu ứng chuyển trang mượt mà chuẩn iOS
+          animation: 'slide_from_bottom',
+          animationDuration: 0,
         }}
       >
         <Stack.Screen name="Splash" component={SplashScreen} />
@@ -51,7 +55,6 @@ export const RootNavigator = ({ isDarkMode = false }: RootNavigatorProps) => {
         <Stack.Screen
           name="MainTab"
           component={MainTabNavigator}
-          options={{ animation: 'fade_from_bottom' }}
         />
 
         {/* Các màn hình phụ không nằm trong Tab (ví dụ: Chi tiết giao dịch) */}
@@ -62,7 +65,9 @@ export const RootNavigator = ({ isDarkMode = false }: RootNavigatorProps) => {
           name="BalanceAdjustment"
           component={BalanceAdjustmentScreen}
         />
-        {/* <Stack.Screen name="TransactionDetail" component={TransactionDetailScreen} /> */}
+        <Stack.Screen name="HistoryTransaction" component={HistoryTransactionScreen} />
+        <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
+        <Stack.Screen name="EditCategory" component={EditCategoryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

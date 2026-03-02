@@ -6,11 +6,19 @@ export type ThemeMode = 'system' | 'light' | 'dark';
 type GlobalState = {
   theme: ThemeMode;
   hiddenCurrency: boolean;
+  time: {
+    month: number;
+    year: number;
+  };
 };
 
 const initialState: GlobalState = {
   theme: (storageUtils.getTheme() as ThemeMode) || 'system',
   hiddenCurrency: false,
+  time: {
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+  },
 };
 
 const globalSlice = createSlice({
@@ -24,8 +32,11 @@ const globalSlice = createSlice({
     setHiddenCurrency(state, action: PayloadAction<boolean>) {
       state.hiddenCurrency = action.payload;
     },
+    setTime(state, action: PayloadAction<{ month: number; year: number }>) {
+      state.time = action.payload;
+    },
   },
 });
 
-export const { setTheme, setHiddenCurrency } = globalSlice.actions;
+export const { setTheme, setHiddenCurrency, setTime } = globalSlice.actions;
 export default globalSlice.reducer;

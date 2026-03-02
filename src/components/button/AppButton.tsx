@@ -4,24 +4,22 @@ import { BoxProps, useTheme } from '@shopify/restyle';
 import { Box } from '@theme/components';
 import React from 'react';
 import {
-  Keyboard,
-  Pressable,
-  PressableProps,
   StyleProp,
+  TouchableOpacity,
+  TouchableOpacityProps,
   ViewStyle,
 } from 'react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
-// Tùy chọn rung mặc định
 const hapticOptions = {
   enableVibrateFallback: true,
   ignoreAndroidSystemSettings: false,
 };
 
-interface AppButtonProps extends PressableProps {
+interface AppButtonProps extends TouchableOpacityProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  containerProps?: BoxProps<Theme>; // Cho phép dùng props của Box (padding, margin, màu sắc)
+  containerProps?: BoxProps<Theme>;
   haptic?: 'impactLight' | 'impactMedium' | 'impactHeavy' | 'selection';
   activeOpacity?: number;
   shadow?: boolean;
@@ -34,14 +32,15 @@ const AppButton = ({
   containerProps,
   haptic,
   activeOpacity = 0.6,
-  shadow = true,
+  shadow = false,
   onPress,
   backgroundColor,
+  disabled,
   ...rest
 }: AppButtonProps) => {
   const { colors } = useTheme<Theme>();
+
   const handlePress = (event: any) => {
-    Keyboard.dismiss();
     if (haptic) {
       ReactNativeHapticFeedback.trigger(haptic, hapticOptions);
     }
@@ -49,27 +48,25 @@ const AppButton = ({
   };
 
   return (
-    <Pressable
+    <TouchableOpacity
       onPress={handlePress}
+      activeOpacity={activeOpacity}
+      disabled={disabled}
       {...rest}
-      // Dùng hitSlop mặc định để dễ bấm hơn cho các nút nhỏ
-      hitSlop={8}
     >
-      {({ pressed }) => (
-        <Box
-          {...containerProps}
-          style={[
-            { borderRadius: RADIUS.m, padding: SPACING.m },
-            shadow && { ...SHADOW, borderWidth: 1, borderColor: colors.card },
-            style,
-            { opacity: pressed ? activeOpacity : rest.disabled ? 0.5 : 1 },
-          ]}
-          backgroundColor={backgroundColor}
-        >
-          {children}
-        </Box>
-      )}
-    </Pressable>
+      <Box
+        {...containerProps}
+        style={[
+          { borderRadius: RADIUS.m, padding: SPACING.m },
+          shadow && { ...SHADOW, borderWidth: 1, borderColor: colors.card },
+          style,
+          disabled && { opacity: 0.5 },
+        ]}
+        backgroundColor={backgroundColor}
+      >
+        {children}
+      </Box>
+    </TouchableOpacity>
   );
 };
 

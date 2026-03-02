@@ -41,7 +41,7 @@ const QuickAction = ({ onCreateWallet }: Props) => {
       id: 'add',
       label: 'Tạo ví mới',
       icon: <AppIcon name="plus" size={20} color={colors.primary} />,
-      options: walletOptions, // Nút này sẽ bung menu
+      options: walletOptions,
       navigate: 'AddWallet',
     },
     {
@@ -54,7 +54,7 @@ const QuickAction = ({ onCreateWallet }: Props) => {
           color={colors.primary}
         />
       ),
-      navigate: 'WalletTransfer', // Nút này bấm là đi luôn
+      navigate: 'WalletTransfer',
     },
     {
       id: 'update',

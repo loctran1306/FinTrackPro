@@ -12,6 +12,8 @@ interface AppInputProps extends TextInputProps {
   error?: string;
   required?: boolean;
   noBorder?: boolean;
+  noMargin?: boolean;
+  suffix?: string;
 }
 
 const AppInput = ({
@@ -20,6 +22,8 @@ const AppInput = ({
   error,
   required,
   noBorder,
+  noMargin,
+  suffix,
   ...props
 }: AppInputProps) => {
   const { colors } = useTheme<Theme>();
@@ -33,7 +37,7 @@ const AppInput = ({
   };
 
   return (
-    <Box marginBottom="m" width="100%">
+    <Box marginBottom={noMargin ? undefined : 'm'} width="100%">
       {/* Label */}
       {label && (
         <Box flexDirection="row" marginBottom="s">
@@ -78,11 +82,16 @@ const AppInput = ({
             props.onFocus?.(event);
           }}
         />
+        {suffix ? (
+          <Text variant="body" color="secondaryText" marginLeft="xs">
+            {suffix}
+          </Text>
+        ) : null}
       </Box>
 
       {/* Error Message */}
       {error && (
-        <Text variant="caption" color="danger" marginTop="s">
+        <Text variant='caption' color="danger" marginTop="s">
           {error}
         </Text>
       )}

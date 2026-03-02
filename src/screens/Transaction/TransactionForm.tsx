@@ -11,10 +11,10 @@ import CalculatorKeyboard from '@/components/keyboard/CalculatorKeyboard';
 import LoadingWithLogo from '@/components/loading/LoadingWithLogo';
 import DateTimePicker from '@/components/picker/DateTimePicker';
 import { formatVND } from '@/helpers/currency.helper';
-import { Category } from '@/services/category/category.type';
+import { RootStackParamList, RootStackScreenProps } from '@/navigation/types';
+import { CategoryItem } from '@/services/category/category.type';
 import {
-  CreateTransactionType,
-  TransactionType as TransactionModel,
+  CreateTransactionType
 } from '@/services/transaction/transaction.type';
 import { WalletType } from '@/services/wallet/wallet.type';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -27,7 +27,8 @@ import { Theme } from '@/theme';
 import { Box, Text } from '@/theme/components';
 import { RADIUS, SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
 import moment from 'moment';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -35,17 +36,12 @@ import { Keyboard, TouchableOpacity } from 'react-native';
 
 type TransactionMode = 'expense' | 'income';
 
-type TransactionFormRouteProp = RouteProp<
-  { params: { transaction?: TransactionModel } },
-  'params'
->;
 
-const TransactionForm = () => {
+const TransactionForm = ({ route }: RootStackScreenProps<'TransactionForm'>) => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
-  const route = useRoute<TransactionFormRouteProp>();
   const transaction = route.params?.transaction;
   const isEdit = !!transaction;
-
   const [type, setType] = useState<TransactionMode>('expense');
   const [amount, setAmount] = useState('');
   const [amountView, setAmountView] = useState('0');
@@ -62,13 +58,12 @@ const TransactionForm = () => {
 
   // Data States
   const [selectedWallet, setSelectedWallet] = useState<WalletType | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+  const [selectedCategory, setSelectedCategory] = useState<CategoryItem | null>(
     null,
   );
 
   // Redux
   const dispatch = useAppDispatch();
-  const navigation = useNavigation();
   const { session } = useAppSelector(state => state.auth);
   const { categories } = useAppSelector(state => state.category);
   const { creditWallets, paymentWallets } = useAppSelector(selectWallets);
@@ -193,7 +188,9 @@ const TransactionForm = () => {
       toast.success(
         isEdit ? 'Cập nhật giao dịch thành công' : 'Thêm giao dịch thành công',
       );
-      navigation.goBack();
+      setTimeout(() => {
+        navigation.goBack();
+      }, 100);
     } else {
       toast.error(
         isEdit ? 'Cập nhật giao dịch thất bại' : 'Thêm giao dịch thất bại',
@@ -204,7 +201,7 @@ const TransactionForm = () => {
   return (
     <Screen padding="none" backgroundColor="main">
       <AppHeader title={isEdit ? 'Sửa giao dịch' : 'Thêm giao dịch'} />
-      <AppScrollView onRefresh={async () => {}}>
+      <AppScrollView onRefresh={async () => { }}>
         {/* Tabs */}
         <Box flexDirection="row" padding="m" gap="m">
           {renderTab('expense', 'Khoản chi')}

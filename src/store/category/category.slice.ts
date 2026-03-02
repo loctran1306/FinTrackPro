@@ -4,6 +4,7 @@ import { getCategoriesThunk } from './category.thunk';
 
 const initialState: CategoryState = {
   categories: null,
+  loading: false,
 };
 
 const categorySlice = createSlice({
@@ -11,8 +12,15 @@ const categorySlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: builder => {
+    builder.addCase(getCategoriesThunk.pending, state => {
+      state.loading = true;
+    });
     builder.addCase(getCategoriesThunk.fulfilled, (state, action) => {
       state.categories = action.payload;
+      state.loading = false;
+    });
+    builder.addCase(getCategoriesThunk.rejected, state => {
+      state.loading = false;
     });
   },
 });

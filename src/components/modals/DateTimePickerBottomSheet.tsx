@@ -15,6 +15,7 @@ interface Props {
   numberMonthBefore?: number;
   numberMonthFuture?: number;
   disableFuture?: boolean;
+  hideTimePicker?: boolean;
 }
 
 const DateTimePickerBottomSheet: React.FC<Props> = ({
@@ -25,6 +26,7 @@ const DateTimePickerBottomSheet: React.FC<Props> = ({
   numberMonthBefore = 24,
   numberMonthFuture = 0,
   disableFuture = true,
+  hideTimePicker = false,
 }) => {
   const bottomSheetRef = useRef<AppBottomSheetRef>(null);
 
@@ -56,6 +58,7 @@ const DateTimePickerBottomSheet: React.FC<Props> = ({
         numberMonthBefore={numberMonthBefore}
         numberMonthFuture={numberMonthFuture}
         disableFuture={disableFuture}
+        hideTimePicker={hideTimePicker}
       />
     </AppBottomSheet>
   );

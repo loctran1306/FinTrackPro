@@ -30,6 +30,13 @@ export type RootStackParamList = {
   AddWallet: { type: 'cash' | 'bank' | 'credit' };
   WalletTransfer: undefined;
   BalanceAdjustment: undefined;
+  HistoryTransaction: undefined;
+  CategoryDetail: {
+    categoryId: string;
+  };
+  EditCategory: {
+    categoryId: string;
+  };
 };
 
 /**

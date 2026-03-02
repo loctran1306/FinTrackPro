@@ -1,171 +1,184 @@
-import React, { useRef, useMemo, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
-import { StyleSheet, Dimensions, TouchableOpacity, View } from 'react-native';
-import BottomSheet, { BottomSheetView, BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
-import { FlashList, FlashListRef } from '@shopify/flash-list';
+import React, {
+  useRef,
+  useMemo,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+  useCallback,
+} from 'react';
+import {
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+  View,
+  TextInput,
+} from 'react-native';
 import { Box, Text } from '@theme/components';
+import AppBottomSheet, { AppBottomSheetRef } from '@/components/common/AppBottomSheet';
 import AppIcon from '@/components/common/AppIcon';
 import { ICON_CATEGORIES } from '@/constants/icons';
-import { palette } from '@/theme';
+import { COLORS } from '@/theme';
+import { RADIUS, SPACING } from '@/theme/constant';
+import { useTheme } from '@shopify/restyle';
+import { Theme } from '@/theme';
 
 const { width } = Dimensions.get('window');
-const ICON_SIZE = (width - 32) / 4;
+const COLS = 4;
+// Tính toán kích thước ô dựa trên số cột để hiển thị đều nhau
+const ICON_SIZE = (width - SPACING.m * 2 - (COLS - 1) * SPACING.l) / COLS;
 
 interface Props {
-    onSelect: (name: string) => void;
-    selectedIcon?: string;
+  onSelect: (iconName: string) => void;
+  selectedIcon?: string;
 }
 
-// Định nghĩa các hàm mà Ref có thể gọi
 export interface IconPickerBottomSheetRef {
-    expand: () => void;
-    close: () => void;
-    snapToIndex: (index: number) => void;
+  expand: () => void;
+  close: () => void;
+  snapToIndex: (index: number) => void;
 }
 
 const IconPickerBottomSheet = forwardRef<IconPickerBottomSheetRef, Props>(
-    ({ onSelect, selectedIcon }, ref) => {
-        const bottomSheetRef = useRef<BottomSheet>(null);
-        const flashListRef = useRef<FlashListRef<any>>(null);
-        const [searchQuery, setSearchQuery] = useState('');
-        const snapPoints = useMemo(() => ['50%', '85%'], []);
+  ({ onSelect, selectedIcon }, ref) => {
+    const { colors } = useTheme<Theme>();
+    const bottomSheetRef = useRef<AppBottomSheetRef>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
-        // Public các hàm ra bên ngoài thông qua Ref
-        useImperativeHandle(ref, () => ({
-            expand: () => bottomSheetRef.current?.expand(),
-            close: () => bottomSheetRef.current?.close(),
-            snapToIndex: (index: number) => bottomSheetRef.current?.snapToIndex(index),
-        }));
+    useImperativeHandle(ref, () => ({
+      expand: () => bottomSheetRef.current?.expand(),
+      close: () => bottomSheetRef.current?.close(),
+      snapToIndex: () => { },
+    }));
 
-        const listData = useMemo(() => {
-            const result: any[] = [];
-            ICON_CATEGORIES.forEach((section, sIdx) => {
-                const filteredIcons = section.icons.filter(icon =>
-                    icon.toLowerCase().includes(searchQuery.toLowerCase())
-                );
-                if (filteredIcons.length > 0) {
-                    result.push({ type: 'HEADER', title: section.title, sIdx });
-                    filteredIcons.forEach(icon => result.push({ type: 'ICON', name: icon, sIdx }));
-                }
-            });
-            return result;
-        }, [searchQuery]);
+    const filteredSections = useMemo(() => {
+      const query = searchQuery.trim().toLowerCase();
+      if (!query) return ICON_CATEGORIES;
 
-        const handleTabPress = (sectionIndex: number) => {
-            const targetIndex = listData.findIndex(
-                item => item.type === 'HEADER' && item.sIdx === sectionIndex
-            );
-            if (targetIndex !== -1) {
-                flashListRef.current?.scrollToIndex({ index: targetIndex, animated: true });
-            }
-        };
+      return ICON_CATEGORIES.map(cat => ({
+        ...cat,
+        icons: cat.icons.filter(item =>
+          item.name.toLowerCase().includes(query) ||
+          item.nameEn.toLowerCase().includes(query) ||
+          item.icon.toLowerCase().includes(query)
+        ),
+      })).filter(cat => cat.icons.length > 0);
+    }, [searchQuery]);
 
-        const renderItem = ({ item }: { item: any }) => {
-            if (item.type === 'HEADER') {
-                return (
-                    <View style={styles.headerRow}>
-                        <Text variant="caption" fontWeight="bold" color="secondaryText">{item.title}</Text>
-                    </View>
-                );
-            }
-            const isSelected = selectedIcon === item.name;
-            return (
-                <TouchableOpacity
-                    onPress={() => {
-                        onSelect(item.name);
-                        bottomSheetRef.current?.close(); // Chọn xong tự đóng cho xịn
-                    }}
-                    style={[styles.iconBtn, isSelected && styles.selectedIconBtn]}
-                >
-                    <AppIcon name={item.name} size={26} color={isSelected ? "#ff7d66" : "#444"} />
-                </TouchableOpacity>
-            );
-        };
+    const handleClose = useCallback(() => {
+      setSearchQuery('');
+    }, []);
 
-        const handleSheetChange = useCallback((index: number) => {
-            // index === -1 nghĩa là sheet đã đóng hoàn toàn
-            if (index === -1) {
-                setSearchQuery(''); // Xóa nội dung search cũ
-            }
-        }, []);
+    const handleSelect = useCallback(
+      (iconName: string) => {
+        onSelect(iconName);
+        bottomSheetRef.current?.close();
+      },
+      [onSelect]
+    );
 
-        return (
-            <BottomSheet
-                ref={bottomSheetRef}
-                index={-1}
-                snapPoints={snapPoints}
-                enablePanDownToClose
-                backgroundStyle={{ backgroundColor: '#fff' }}
-                handleIndicatorStyle={{ backgroundColor: '#ccc' }}
-                onChange={handleSheetChange}
-            >
-                <BottomSheetView style={{ flex: 1, paddingHorizontal: 16 }}>
-                    <Text variant="subheader" marginBottom="m">Chọn biểu tượng</Text>
+    return (
+      <AppBottomSheet
+        ref={bottomSheetRef}
+        snapPoints={['55%', '90%']}
+        onClose={handleClose}
+        isScrollable={true}
+      >
+        <Box paddingHorizontal="m">
+          <Text variant="subheader" marginBottom="m">
+            Chọn biểu tượng
+          </Text>
 
-                    <BottomSheetTextInput
-                        style={styles.searchBar}
-                        placeholder="Tìm tên icon..."
-                        onChangeText={setSearchQuery}
-                        placeholderTextColor="#999"
-                    />
+          <TextInput
+            style={[
+              styles.searchBar,
+              { backgroundColor: colors.card, color: colors.text }
+            ]}
+            placeholder="Tìm theo tên ví dụ: 'Ăn uống', 'Car'..."
+            placeholderTextColor={colors.secondaryText}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
 
-                    {!searchQuery && (
-                        <Box height={60} marginBottom="s">
-                            <BottomSheetScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                {ICON_CATEGORIES.map((cat, idx) => (
-                                    <TouchableOpacity key={idx} onPress={() => handleTabPress(idx)} style={styles.tabItem}>
-                                        <AppIcon name={cat.tabIcon} size={20} color="#ff7d66" />
-                                        <Text variant="caption" fontSize={10}>{cat.title.split(' ')[0]}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </BottomSheetScrollView>
-                        </Box>
-                    )}
+          {filteredSections.map(section => (
+            <Box key={section.title} marginBottom="l">
+              <Box
+                backgroundColor="card"
+                paddingVertical="s"
+                paddingHorizontal="m"
+                marginBottom="s"
+                borderRadius={RADIUS.s}
+              >
+                <Text variant="label" fontFamily="semiBold" color="secondaryText">
+                  {section.title}
+                </Text>
+              </Box>
 
-                    <Box flex={1}>
-                        <FlashList
-                            ref={flashListRef}
-                            data={listData}
-                            renderItem={renderItem}
-                            keyExtractor={(item, index) =>
-                                item.type === 'HEADER'
-                                    ? `header-${item.title}-${index}`
-                                    : `icon-${item.name}-${index}`
-                            }
-                            numColumns={4}
-                            getItemType={item => item.type}
-                            overrideItemLayout={(layout, item) => {
-                                layout.span = item.type === 'HEADER' ? 4 : 1;
-                            }}
-                        />
-                    </Box>
-                </BottomSheetView>
-            </BottomSheet>
-        );
-    }
+              <View style={styles.iconGrid}>
+                {section.icons.map((item) => {
+                  const isSelected = selectedIcon === item.icon;
+                  return (
+                    <TouchableOpacity
+                      key={item.icon}
+                      onPress={() => handleSelect(item.icon)}
+                      style={[
+                        styles.iconBtn,
+                        isSelected && {
+                          backgroundColor: COLORS.primary + '20',
+                          borderRadius: RADIUS.m,
+                        },
+                      ]}
+                      activeOpacity={0.7}
+                    >
+                      <AppIcon
+                        name={item.icon}
+                        size={24}
+                        color={isSelected ? COLORS.primary : colors.text}
+                      />
+                      <Text
+                        numberOfLines={1}
+                        style={[styles.iconLabel, { color: isSelected ? COLORS.primary : colors.secondaryText }]}
+                      >
+                        {item.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </Box>
+          ))}
+          <Box height={SPACING.xl} />
+        </Box>
+      </AppBottomSheet>
+    );
+  }
 );
 
 IconPickerBottomSheet.displayName = 'IconPickerBottomSheet';
 
 const styles = StyleSheet.create({
-    headerRow: {
-        backgroundColor: palette.blueLight,
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        marginTop: 4,
-        height: ICON_SIZE,
-        justifyContent: 'center',
-    },
-    searchBar: {
-        backgroundColor: '#f2f2f2',
-        borderRadius: 12,
-        padding: 12,
-        marginBottom: 10,
-        fontFamily: 'LexendDeca-Regular',
-        color: '#000',
-    },
-    tabItem: { alignItems: 'center', marginRight: 20, minWidth: 50 },
-    iconBtn: { width: ICON_SIZE, height: ICON_SIZE, alignItems: 'center', justifyContent: 'center' },
-    selectedIconBtn: { backgroundColor: '#ff7d6615', borderRadius: 12 },
+  searchBar: {
+    borderRadius: RADIUS.m,
+    paddingHorizontal: SPACING.m,
+    paddingVertical: SPACING.m,
+    marginBottom: SPACING.m,
+    fontSize: 14,
+  },
+  iconGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  iconBtn: {
+    width: ICON_SIZE,
+    paddingVertical: SPACING.s,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconLabel: {
+    fontSize: 10,
+    marginTop: 4,
+    textAlign: 'center',
+  }
 });
 
 export default IconPickerBottomSheet;

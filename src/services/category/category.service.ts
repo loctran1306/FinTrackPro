@@ -1,14 +1,36 @@
 import { supabase } from '@/lib/supabase';
 
+export type UpdateCategoryPayload = {
+  name?: string;
+  icon?: string;
+  color?: string;
+  limit?: number;
+};
+
 const categoryService = {
-  getAllCategories: async () => {
-    const response = await supabase
+  getCategoryStatistics: async (month: number, year: number) => {
+    const { data, error } = await supabase.rpc('get_category_stats', {
+      p_month: month,
+      p_year: year,
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  updateCategory: async (id: string, payload: UpdateCategoryPayload) => {
+    const { data: category, error: categoryError } = await supabase
       .from('categories')
-      .select('id, name, icon, color, limit');
-    if (response.error) {
-      throw response.error;
-    }
-    return response.data;
+      .update(payload)
+      .select('id, name, icon, color, limit')
+      .eq('id', id)
+      .single();
+    if (categoryError) throw categoryError;
+    return category;
+  },
+
+  deleteCategory: async (id: string) => {
+    const { error } = await supabase.from('categories').delete().eq('id', id);
+    if (error) throw error;
   },
 };
 

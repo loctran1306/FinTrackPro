@@ -2,6 +2,7 @@ import AppButton from '@/components/button/AppButton';
 import { formatVND } from '@/helpers/currency.helper';
 import { supabase } from '@/lib/supabase';
 import { WalletType } from '@/services/wallet/wallet.type';
+import { getCategoriesThunk } from '@/store/category/category.thunk';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectWallets } from '@/store/wallet/wallet.selector';
 import { updateWallet } from '@/store/wallet/wallet.slice';
@@ -19,6 +20,8 @@ const WalletList = () => {
 
   const dispatch = useAppDispatch();
   const userId = useAppSelector(state => state.auth.session?.user?.id);
+  const { time } = useAppSelector(state => state.global);
+
 
   // Realtime subscription for Wallets
   useEffect(() => {
@@ -57,6 +60,7 @@ const WalletList = () => {
     };
     dispatch(updateWallet(dataUpdate));
     dispatch(getFinanceOverviewThunk());
+    dispatch(getCategoriesThunk({ month: time.month, year: time.year }));
   };
 
   return (

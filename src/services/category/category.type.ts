@@ -1,11 +1,17 @@
-export type Category = {
+export type CategoryItem = {
   id: string;
   name: string;
-  limit: number;
   icon: string;
   color: string;
+  subtext: string;
+  amount: number;
+  budget_limit: number;
+  percent_total: number;
+  percent_limit: number;
+  remaining: string;
 };
 
 export type CategoryState = {
-  categories: Category[] | null;
+  categories: CategoryItem[] | null;
+  loading: boolean;
 };
