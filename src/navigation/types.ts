@@ -34,9 +34,11 @@ export type RootStackParamList = {
   CategoryDetail: {
     categoryId: string;
   };
-  EditCategory: {
-    categoryId: string;
-  };
+  CategoryForm:
+    | {
+        categoryId?: string;
+      }
+    | undefined;
 };
 
 /**

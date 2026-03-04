@@ -35,6 +35,8 @@ interface AppBottomSheetProps {
   hideIndicator?: boolean;
   /** Ẩn backdrop */
   hideBackdrop?: boolean;
+  /** Ẩn content padding */
+  hideContentPadding?: boolean;
 }
 
 const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>(
@@ -47,6 +49,7 @@ const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>(
       isScrollable = true,
       hideIndicator = false,
       hideBackdrop = false,
+      hideContentPadding = false,
     },
     ref,
   ) => {
@@ -105,6 +108,7 @@ const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>(
           <BottomSheetScrollView
             style={[
               styles.content,
+              hideContentPadding && { paddingHorizontal: 0, paddingBottom: 0 },
               enableDynamicSizing && { minHeight: contentMinHeight },
             ]}
             keyboardShouldPersistTaps="handled"

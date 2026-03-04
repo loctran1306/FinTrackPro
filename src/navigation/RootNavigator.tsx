@@ -5,7 +5,6 @@ import {
   NavigationContainer,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { navigationRef } from './navigationRef';
 import { Theme } from '@/theme';
 
 // Import Type và Navigator con
@@ -19,8 +18,9 @@ import WalletTransferScreen from '@/screens/Wallet/WalletTransfer';
 import BalanceAdjustmentScreen from '@/screens/Balance/BalanceAdjustment';
 import LoginScreen from '@/screens/Auth/Login';
 import HistoryTransactionScreen from '@/screens/Transaction/HistoryTransaction';
-import CategoryDetailScreen from '@/screens/Statistics/CategoryDetail';
-import EditCategoryScreen from '@/screens/Statistics/EditCategory';
+import CategoryDetailScreen from '@/screens/Category/CategoryDetail';
+import CategoryFormScreen from '@/screens/Category/CategoryForm';
+import { navigationRef } from '@/navigation/navigationRef';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -34,11 +34,11 @@ export const RootNavigator = ({ isDarkMode = false }: RootNavigatorProps) => {
 
   return (
     <NavigationContainer
-      ref={navigationRef}
       theme={{
         ...navTheme,
         colors: { ...navTheme.colors, background: colors.main },
       }}
+      ref={navigationRef}
     >
       <Stack.Navigator
         initialRouteName="Splash"
@@ -67,7 +67,7 @@ export const RootNavigator = ({ isDarkMode = false }: RootNavigatorProps) => {
         />
         <Stack.Screen name="HistoryTransaction" component={HistoryTransactionScreen} />
         <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
-        <Stack.Screen name="EditCategory" component={EditCategoryScreen} />
+        <Stack.Screen name="CategoryForm" component={CategoryFormScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

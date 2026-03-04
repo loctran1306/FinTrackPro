@@ -1,5 +1,12 @@
 import { supabase } from '@/lib/supabase';
 
+export type CreateCategoryPayload = {
+  name: string;
+  icon: string;
+  color: string;
+  limit: number;
+};
+
 export type UpdateCategoryPayload = {
   name?: string;
   icon?: string;
@@ -8,6 +15,20 @@ export type UpdateCategoryPayload = {
 };
 
 const categoryService = {
+  createCategory: async (payload: CreateCategoryPayload) => {
+    const { data: category, error } = await supabase
+      .from('categories')
+      .insert({
+        name: payload.name,
+        icon: payload.icon,
+        color: payload.color,
+        limit: payload.limit,
+      })
+      .select('id, name, icon, color, limit')
+      .single();
+    if (error) throw error;
+    return category;
+  },
   getCategoryStatistics: async (month: number, year: number) => {
     const { data, error } = await supabase.rpc('get_category_stats', {
       p_month: month,

@@ -11,7 +11,7 @@ import { addOpacity } from '@/helpers/color.helper';
 import {
   formatVND,
   formatVNDInput,
-  parseVNDInput
+  parseVNDInput,
 } from '@/helpers/currency.helper';
 import { RootStackParamList } from '@/navigation/types';
 import categoryService from '@/services/category/category.service';
@@ -21,6 +21,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { Theme } from '@/theme';
 import { RADIUS, SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
+import { CommonActions } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text } from '@theme/components';
@@ -30,17 +31,20 @@ import {
   Alert,
   ScrollView,
   Switch,
-  TouchableOpacity
+  TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Yup from 'yup';
+import { useTranslation } from 'react-i18next';
+import { navigateToMain } from '@/navigation/navigationRef';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'EditCategory'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'CategoryForm'>;
 
-const EditCategoryScreen = ({ route, navigation }: Props) => {
-  const {
-    categoryId,
-  } = route.params;
+const CategoryFormScreen = ({ route, navigation }: Props) => {
+  const { t } = useTranslation();
+  const { categoryId } = route.params ?? {};
+
+  const isEdit = !!categoryId;
 
   const { colors } = useTheme<Theme>();
   const { top: topSafeArea, bottom: bottomSafeArea } = useSafeAreaInsets();
@@ -48,11 +52,20 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
   const [budgetAlert, setBudgetAlert] = useState(false);
 
   const dispatch = useAppDispatch();
+  const { session } = useAppSelector(state => state.auth);
   const iconPickerRef = useRef<IconPickerBottomSheetRef>(null);
-  const category = useAppSelector(selectCategoryById(categoryId));
+  const category = useAppSelector(
+    selectCategoryById(categoryId ?? ''),
+  );
   const { time } = useAppSelector(state => state.global);
 
-  const formCategory = useFormik<{ id: string; name: string; icon: string; color: string; budget_limit: number }>({
+  const formCategory = useFormik<{
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+    budget_limit: number;
+  }>({
     initialValues: {
       id: category?.id ?? '',
       name: category?.name ?? '',
@@ -60,61 +73,104 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
       color: category?.color ?? CATEGORY_COLORS[0],
       budget_limit: category?.budget_limit ?? 0,
     },
+    enableReinitialize: true,
     validationSchema: Yup.object().shape({
-      name: Yup.string().required('Vui lòng nhập tên danh mục'),
-      icon: Yup.string().required('Vui lòng chọn icon'),
-      color: Yup.string().required('Vui lòng chọn màu'),
-      budget_limit: Yup.number().required('Vui lòng nhập giới hạn chi tiêu'),
+      name: Yup.string().required(t('warning.enter_category_name')),
+      icon: Yup.string().required(t('warning.enter_category_icon')),
+      color: Yup.string().required(t('warning.enter_category_color')),
+      budget_limit: Yup.number().required(
+        t('warning.enter_category_budget_limit'),
+      ),
     }),
-    onSubmit: async (values) => {
-      if (!category) return;
+    onSubmit: async values => {
+      if (!session?.user?.id) {
+        toast.error(t('common.error').toLocaleUpperCase());
+        return;
+      }
       try {
-        const updatedCategory = await categoryService.updateCategory(values.id, {
-          name: values.name,
-          icon: values.icon,
-          color: values.color,
-          limit: values.budget_limit,
-        });
-        if (!updatedCategory) toast.error('Không thể cập nhật danh mục');
-        await dispatch(getCategoriesThunk({ month: time.month, year: time.year })).unwrap();
-        toast.success('Đã cập nhật danh mục');
+        if (isEdit && category) {
+          const updatedCategory = await categoryService.updateCategory(
+            values.id,
+            {
+              name: values.name,
+              icon: values.icon,
+              color: values.color,
+              limit: values.budget_limit,
+            },
+          );
+          if (!updatedCategory)
+            toast.error(t('finance.update_category_error'));
+          await dispatch(
+            getCategoriesThunk({
+              month: time.month,
+              year: time.year,
+            }),
+          ).unwrap();
+          toast.success(t('finance.update_category_success'));
+        } else {
+          const newCategory = await categoryService.createCategory({
+            name: values.name,
+            icon: values.icon,
+            color: values.color,
+            limit: values.budget_limit,
+          });
+          if (!newCategory) toast.error(t('finance.create_category_error'));
+          await dispatch(
+            getCategoriesThunk({
+              month: time.month,
+              year: time.year,
+            }),
+          ).unwrap();
+          toast.success(t('finance.create_category_success'));
+        }
         navigation.goBack();
       } catch {
-        toast.error('Không thể cập nhật danh mục');
+        toast.error(
+          isEdit
+            ? t('finance.update_category_error')
+            : t('finance.create_category_error'),
+        );
       }
     },
   });
 
-
-
   const handleDelete = () => {
+    if (!isEdit || !categoryId) return;
     Alert.alert(
-      'Xóa danh mục',
-      'Bạn có chắc muốn xóa danh mục này? Các giao dịch liên quan sẽ không bị xóa.',
+      t('finance.delete_category'),
+      t('warning.delete_category_confirm'),
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Xóa',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
-            // try {
-            //   await categoryService.deleteCategory(categoryId);
-            //   await dispatch(getCategoriesThunk({ month: time.month, year: time.year })).unwrap();
-            //   toast.success('Đã xóa danh mục');
-            //   navigation.getParent()?.goBack();
-            //   navigation.goBack();
-            // } catch {
-            //   toast.error('Không thể xóa danh mục');
-            // }
+            try {
+              await categoryService.deleteCategory(categoryId);
+              await dispatch(
+                getCategoriesThunk({
+                  month: time.month,
+                  year: time.year,
+                }),
+              ).unwrap();
+              toast.success(t('finance.delete_category_success'));
+              navigateToMain('Statistics');
+            } catch (error) {
+              if ((error as any).code === '23503') {
+                toast.error(t('common.error').toLocaleUpperCase(), t('warning.delete_category_error_dependency'));
+              } else {
+                toast.error(t('finance.delete_category_error'));
+              }
+            }
           },
         },
-      ]
+      ],
     );
   };
 
   const addBudget = (amount: number) => {
     const current = formCategory.values.budget_limit;
-    formCategory.setFieldValue('budget_limit', current + amount);
+    formCategory.setFieldValue('budget_limit', Math.max(0, current + amount));
   };
 
   return (
@@ -137,18 +193,24 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
         >
           <AppIcon name="xmark" size={24} color={colors.text} />
         </AppButton>
-        <Text variant="subheader">Chỉnh sửa danh mục</Text>
+        <Text variant="subheader">
+          {isEdit ? t('finance.edit_category') : t('finance.add_category')}
+        </Text>
         <Box width={40} />
       </Box>
 
-      <AppScrollView contentContainerStyle={{ paddingHorizontal: SPACING.m, paddingBottom: bottomSafeArea + SPACING.m }}>
+      <AppScrollView
+        contentContainerStyle={{
+          paddingHorizontal: SPACING.m,
+          paddingBottom: bottomSafeArea + SPACING.m,
+        }}
+      >
         {/* Category Name */}
         <Box marginBottom="l">
           <Text variant="label" marginBottom="s" color="secondaryText">
-            Tên danh mục
+            {t('finance.category_name')}
           </Text>
           <Box
-
             flexDirection="row"
             alignItems="center"
             padding="m"
@@ -156,7 +218,10 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
             backgroundColor="card"
             style={{ borderWidth: 1, borderColor: colors.card }}
           >
-            <AppButton style={{ padding: 0 }} onPress={() => iconPickerRef.current?.expand()}>
+            <AppButton
+              style={{ padding: 0 }}
+              onPress={() => iconPickerRef.current?.expand()}
+            >
               <Box
                 width={50}
                 height={50}
@@ -164,16 +229,22 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
                 alignItems="center"
                 justifyContent="center"
                 marginRight="m"
-                style={{ backgroundColor: addOpacity(formCategory.values.color, 0.3) }}
+                style={{
+                  backgroundColor: addOpacity(formCategory.values.color, 0.3),
+                }}
               >
-                <AppIcon name={formCategory.values.icon} size={24} color={formCategory.values.color} />
+                <AppIcon
+                  name={formCategory.values.icon}
+                  size={24}
+                  color={formCategory.values.color}
+                />
               </Box>
             </AppButton>
             <Box flex={1} style={{ minWidth: 0 }}>
               <AppInput
                 value={formCategory.values.name}
-                onChangeText={(t) => formCategory.setFieldValue('name', t)}
-                placeholder="Nhập tên danh mục"
+                onChangeText={t => formCategory.setFieldValue('name', t)}
+                placeholder={t('finance.enter_category_name')}
                 noMargin
                 error={formCategory.errors.name}
                 required
@@ -185,7 +256,7 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
         {/* Icon & Color */}
         <Box marginBottom="l">
           <Text variant="label" marginBottom="s" color="secondaryText">
-            Icon & Màu
+            {t('common.icon')} & {t('common.color')}
           </Text>
           <Box
             padding="m"
@@ -198,23 +269,28 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ gap: 4 }}
             >
-
-              {CATEGORY_COLORS.map((c) => (
+              {CATEGORY_COLORS.map(c => (
                 <TouchableOpacity
                   key={c}
                   onPress={() => formCategory.setFieldValue('color', c)}
-                  style={[
-                    {
-                      width: 30,
-                      height: 30,
-                      borderRadius: 15,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: c,
-                    },
-                  ]}
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 15,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: c,
+                  }}
                 >
-                  <AppIcon name="check" size={12} color={formCategory.values.color === c ? colors.white : 'transparent'} />
+                  <AppIcon
+                    name="check"
+                    size={12}
+                    color={
+                      formCategory.values.color === c
+                        ? colors.white
+                        : 'transparent'
+                    }
+                  />
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -224,7 +300,7 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
         {/* Monthly Budget Limit */}
         <Box marginBottom="l">
           <Text variant="label" marginBottom="s" color="secondaryText">
-            Giới hạn chi tiêu hàng tháng
+            {t('finance.monthly_budget_limit')}
           </Text>
           <Box
             padding="l"
@@ -233,12 +309,14 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
             style={{ borderWidth: 1, borderColor: colors.card }}
           >
             <Text variant="caption" color="secondaryText" marginBottom="xs">
-              Số tiền
+              {t('finance.amount')}
             </Text>
-            <Box >
+            <Box>
               <AppInput
                 value={formatVNDInput(formCategory.values.budget_limit)}
-                onChangeText={(t) => formCategory.setFieldValue('budget_limit', parseVNDInput(t))}
+                onChangeText={t =>
+                  formCategory.setFieldValue('budget_limit', parseVNDInput(t))
+                }
                 placeholder="0"
                 keyboardType="number-pad"
                 noMargin
@@ -250,15 +328,18 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
             <Box
               flexDirection="row"
               alignItems="center"
-              justifyContent='space-around'
-              style={{ borderTopWidth: 1, borderTopColor: colors.card }}
+              justifyContent="space-around"
+              style={{
+                borderTopWidth: 1,
+                borderTopColor: colors.card,
+              }}
             >
               <AppButton
                 onPress={() => addBudget(-500)}
                 shadow={false}
                 backgroundColor="card"
               >
-                <Text color='primary' variant="label">{`- ${formatVND(500)}`}</Text>
+                <Text color="primary" variant="label">{`- ${formatVND(500)}`}</Text>
               </AppButton>
 
               <AppButton
@@ -266,10 +347,8 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
                 shadow={false}
                 backgroundColor="card"
               >
-                <Text color='primary' variant="label">{`+ ${formatVND(500)}`}</Text>
+                <Text color="primary" variant="label">{`+ ${formatVND(500)}`}</Text>
               </AppButton>
-
-
             </Box>
           </Box>
         </Box>
@@ -298,10 +377,10 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
             </Box>
             <Box>
               <Text variant="label" fontFamily="semiBold">
-                Cảnh báo chi tiêu
+                {t('finance.budget_alert')}
               </Text>
               <Text variant="caption" color="secondaryText">
-                Thông báo khi gần đạt giới hạn
+                {t('finance.budget_alert_description')}
               </Text>
             </Box>
           </Box>
@@ -313,40 +392,43 @@ const EditCategoryScreen = ({ route, navigation }: Props) => {
           />
         </Box>
 
-
         <Box gap="m">
           <AppButton
             onPress={formCategory.handleSubmit}
             backgroundColor="primary"
           >
-            <Text textAlign="center" color="white" >
-              CẬP NHẬT
+            <Text
+              textAlign="center"
+              color="white"
+              textTransform="uppercase"
+            >
+              {isEdit ? t('common.update') : t('common.create')}
             </Text>
           </AppButton>
-          <AppButton
-            disabled
-            onPress={handleDelete}
-            backgroundColor="danger"
-          >
-            <Text textAlign="center" color="white">
-              XÓA DANH MỤC
-            </Text>
-          </AppButton>
+          {isEdit ? (
+            <AppButton
+              onPress={handleDelete}
+              backgroundColor="danger"
+            >
+              <Text
+                textAlign="center"
+                color="white"
+                textTransform="uppercase"
+              >
+                {t('finance.delete_category')}
+              </Text>
+            </AppButton>
+          ) : null}
         </Box>
-
       </AppScrollView>
-
-
 
       <IconPickerBottomSheet
         ref={iconPickerRef}
         selectedIcon={formCategory.values.icon}
-        onSelect={(name) => formCategory.setFieldValue('icon', name)}
+        onSelect={name => formCategory.setFieldValue('icon', name)}
       />
     </Screen>
   );
 };
 
-
-
-export default EditCategoryScreen;
+export default CategoryFormScreen;

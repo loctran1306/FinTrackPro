@@ -33,10 +33,10 @@ const transactionSlice = createSlice({
         state.page = action.payload?.page || 1;
         state.limit = action.payload?.limit || 10;
         state.total = action.payload?.total || 0;
-        state.transactions = [
-          ...state.transactions,
-          ...action.payload?.transactions,
-        ];
+        state.transactions =
+          action.payload.page > 1
+            ? [...state.transactions, ...action.payload?.transactions]
+            : action.payload.transactions;
       }
     });
     builder.addCase(getTransactionsThunk.rejected, state => {

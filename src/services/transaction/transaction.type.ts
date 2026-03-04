@@ -37,5 +37,4 @@ export type CreateTransactionType = {
   category_id: string | null;
   date: string;
   wallet_id: string;
-  user_id: string;
 };

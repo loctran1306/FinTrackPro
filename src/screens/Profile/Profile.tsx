@@ -13,11 +13,15 @@ import { RootStackParamList } from '@/navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { clearSession } from '@/store/auth/auth.slice';
 import { toast } from '@/utils/toast';
+import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { KEY_LOCALE_STORAGE } from '@/constants/locale.const';
+import AppButton from '@/components/button/AppButton';
 export const ProfileScreen = () => {
+  const { t, i18n } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
-  const [showSettings, setShowSettings] = useState(false);
   const dispatch = useAppDispatch();
   const themeMode = useAppSelector(state => state.global.theme);
   const handleThemeChange = (mode: ThemeMode) => {
@@ -35,6 +39,11 @@ export const ProfileScreen = () => {
     }
   };
 
+  const switchLanguage = (code: 'vi' | 'en') => {
+    i18n.changeLanguage(code);      // Thay đổi giao diện lập tức
+    AsyncStorage.setItem(KEY_LOCALE_STORAGE, code); // Lưu lại cho lần sau
+  };
+
   return (
     <Screen padding="m">
       <Box
@@ -50,9 +59,6 @@ export const ProfileScreen = () => {
             color={colors.primary}
           />
         </Pressable>
-        <Pressable onPress={() => setShowSettings(value => !value)}>
-          <AppIcon name="gear" size={24} color={colors.primary} />
-        </Pressable>
       </Box>
 
       <Box backgroundColor="card" padding="m" borderRadius={16} marginTop="m">
@@ -62,34 +68,44 @@ export const ProfileScreen = () => {
         </Text>
       </Box>
 
-      {showSettings && (
-        <Box marginTop="m">
-          <Text variant="body">Giao diện</Text>
-          <Box flexDirection="row" marginTop="s">
-            {(['system', 'light', 'dark'] as ThemeMode[]).map((mode, index) => {
-              const isActive = themeMode === mode;
-              return (
-                <Pressable key={mode} onPress={() => handleThemeChange(mode)}>
-                  <Box
-                    backgroundColor={isActive ? 'primary' : 'card'}
-                    padding="s"
-                    borderRadius={12}
-                    marginRight={index < 2 ? 's' : undefined}
-                  >
-                    <Text variant="body" color={isActive ? 'main' : 'text'}>
-                      {mode === 'system'
-                        ? 'Hệ thống'
-                        : mode === 'light'
+      <Box marginTop="m">
+        <Text variant="body">Giao diện</Text>
+        <Box flexDirection="row" marginTop="s">
+          {(['system', 'light', 'dark'] as ThemeMode[]).map((mode, index) => {
+            const isActive = themeMode === mode;
+            return (
+              <Pressable key={mode} onPress={() => handleThemeChange(mode)}>
+                <Box
+                  backgroundColor={isActive ? 'primary' : 'card'}
+                  padding="s"
+                  borderRadius={12}
+                  marginRight={index < 2 ? 's' : undefined}
+                >
+                  <Text variant="body" color={isActive ? 'main' : 'text'}>
+                    {mode === 'system'
+                      ? 'Hệ thống'
+                      : mode === 'light'
                         ? 'Sáng'
                         : 'Tối'}
-                    </Text>
-                  </Box>
-                </Pressable>
-              );
-            })}
-          </Box>
+                  </Text>
+                </Box>
+              </Pressable>
+            );
+          })}
         </Box>
-      )}
+      </Box>
+      <Box marginTop="m">
+        <Text variant="body">Ngôn ngữ</Text>
+        <Box flexDirection="row" marginTop="s" gap="s">
+          <AppButton backgroundColor={i18n.language === 'vi' ? 'primary' : 'card'} onPress={() => switchLanguage('vi')}>
+            <Text variant="body" color={i18n.language === 'vi' ? 'main' : 'text'}>Tiếng Việt</Text>
+          </AppButton>
+          <AppButton backgroundColor={i18n.language === 'en' ? 'primary' : 'card'} onPress={() => switchLanguage('en')}>
+            <Text variant="body" color={i18n.language === 'en' ? 'main' : 'text'}>English</Text>
+          </AppButton>
+        </Box>
+      </Box>
+
 
       <Box marginTop="m">
         <Text variant="body">Cài đặt</Text>

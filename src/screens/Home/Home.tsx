@@ -29,12 +29,17 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import QuickTransactionBottomSheet, {
+  QuickTransactionBottomSheetRef,
+} from '@/components/modals/QuickTransactionBottomSheet';
 import HomeTransaction from './components/HomeTransaction';
 import QuickAction from './components/QuickAction';
 import WalletList from './components/WalletList';
 
 export const HomeScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
   const { top: topSafeArea } = useSafeAreaInsets();
@@ -50,6 +55,9 @@ export const HomeScreen = () => {
   const { financeOverview } = useAppSelector(state => state.wallet);
   const { session } = useAppSelector(state => state.auth);
   const { time } = useAppSelector(state => state.global);
+
+
+
   const getData = async () => {
     dispatch(getFinanceOverviewThunk());
     if (session?.user?.id) {
@@ -106,18 +114,20 @@ export const HomeScreen = () => {
     setLoadingComplete(false);
     setLoading(false);
     if (resultRef.current) {
-      toast.success('Thêm ví thành công');
+      toast.success(t('finance.create_wallet_success'));
       setWalletName('');
       setWalletAmount('');
       setSelectedWalletType(null);
       bottomSheetRef.current?.close();
     } else {
-      toast.error('Thêm ví thất bại');
+      toast.error(t('finance.create_wallet_error'));
     }
   };
 
   const bottomSheetRef = useRef<AppBottomSheetRef>(null);
+  const quickTransactionRef = useRef<QuickTransactionBottomSheetRef>(null);
   const bottomTabBarHeight = useBottomTabBarHeight();
+
   return (
     <Screen edges={[]} padding="none">
       <AppScrollView
@@ -135,11 +145,11 @@ export const HomeScreen = () => {
           gap="l"
           style={{ paddingTop: topSafeArea }}
         >
-          <Box alignItems="center" marginTop="m">
+          <Box alignItems="center">
             <AppButton
               shadow={false}
               onPress={handleToggleHiddenCurrency}
-              style={{ padding: SPACING.xs }}
+              style={{ padding: SPACING.m }}
             >
               <Box flexDirection="row" alignItems="center" gap="s">
                 <Text
@@ -148,7 +158,7 @@ export const HomeScreen = () => {
                   textTransform="uppercase"
                   letterSpacing={1}
                 >
-                  Tổng tài sản
+                  {t('finance.total_assets')}
                 </Text>
                 {!hiddenCurrency ? (
                   <AppIcon name="eye" size={16} color={colors.primary} />
@@ -168,7 +178,7 @@ export const HomeScreen = () => {
           >
             <Box flex={1} alignItems="center">
               <Text variant="caption" color="secondaryText">
-                Tổng thu nhập
+                {t('finance.total_income')}
               </Text>
               <Text variant="subheader">
                 {formatVND(
@@ -184,24 +194,27 @@ export const HomeScreen = () => {
             />
             <Box flex={1} alignItems="center">
               <Text variant="caption" color="secondaryText">
-                Theo dõi
+                {t('finance.tracking')}
               </Text>
               <Text variant="subheader">{formatVND(0)}</Text>
             </Box>
           </Box>
         </Box>
-        <QuickAction onCreateWallet={handleCreateWallet} />
+        <QuickAction
+          onCreateWallet={handleCreateWallet}
+          onQuickTransaction={() => quickTransactionRef.current?.expand()}
+        />
         <WalletList />
         <Box backgroundColor="main" flex={1} gap="s" paddingTop="m">
           <Box flexDirection="row" justifyContent="space-between" alignItems="center" >
             <Text paddingHorizontal="m" variant="subheader">
-              Lịch sử giao dịch
+              {t('finance.history_transaction')}
             </Text>
             <AppButton
               onPress={() => navigation.navigate('HistoryTransaction')}
               style={{ paddingVertical: 0 }}
             >
-              <Text variant="subheader" textDecorationLine="underline" color="primary">Xem tất cả</Text>
+              <Text variant="subheader" textDecorationLine="underline" color="primary">{t('common.view_all')}</Text>
             </AppButton>
           </Box>
           <HomeTransaction />
@@ -213,18 +226,18 @@ export const HomeScreen = () => {
         onClose={() => bottomSheetRef.current?.close()}
       >
         <Text variant="header" marginBottom="m">
-          Tạo ví {selectedWalletType ? WALLET_TYPES[selectedWalletType] : ''}
+          {t('finance.create_wallet')} {selectedWalletType ? WALLET_TYPES[selectedWalletType] : ''}
         </Text>
         <AppBottomSheetInput
-          label="Tên ví"
-          placeholder="Nhập tên ví"
+          label={t('finance.wallet_name')}
+          placeholder={t('finance.wallet_name_placeholder')}
           value={walletName}
           onChangeText={setWalletName}
         />
         <AppBottomSheetInput
           type="numeric"
-          label="Số tiền"
-          placeholder="Nhập số tiền"
+          label={t('finance.amount')}
+          placeholder={t('finance.amount_placeholder')}
           value={walletAmount}
           onChangeText={setWalletAmount}
         />
@@ -247,7 +260,7 @@ export const HomeScreen = () => {
               >
                 <AppIcon name="plus" size={20} color="white" />
                 <Text variant="body" fontFamily="semiBold" color="white">
-                  Tạo ví
+                  {t('finance.create_wallet')}
                 </Text>
               </Box>
             </AppButton>
@@ -261,6 +274,7 @@ export const HomeScreen = () => {
           )}
         </Box>
       </AppBottomSheet>
+      <QuickTransactionBottomSheet ref={quickTransactionRef} />
     </Screen>
   );
 };

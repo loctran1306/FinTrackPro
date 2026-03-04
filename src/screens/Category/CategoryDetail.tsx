@@ -20,10 +20,12 @@ import { addOpacity } from '@/helpers/color.helper';
 import LoadingChildren from '@/components/loading/LoadingChildren';
 import { selectCategoryById } from '@/store/category/category.selector';
 import { CATEGORY_COLORS } from '@/constants/category';
+import { useTranslation } from 'react-i18next';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CategoryDetail'>;
 
 const CategoryDetailScreen = ({ route, navigation }: Props) => {
+  const { t } = useTranslation();
   const {
     categoryId,
   } = route.params;
@@ -98,7 +100,7 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
         </Box>
         <AppButton
           onPress={() =>
-            navigation.navigate('EditCategory', {
+            navigation.navigate('CategoryForm', {
               categoryId: category?.id ?? '',
             })
           }
@@ -157,7 +159,7 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
             </Box>
             <Box>
               <Text variant="label" color="secondaryText">
-                Tổng chi
+                {t('finance.total_expense')}
               </Text>
               <Text variant="header">{formatVND(category?.amount ?? 0)}</Text>
             </Box>
@@ -166,7 +168,7 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
           <Box marginBottom="m">
             <Box flexDirection="row" justifyContent="space-between" marginBottom="xs">
               <Text variant="caption" color="secondaryText">
-                Hạn mức ngân sách
+                {t('finance.budget_limit')}
               </Text>
               <Text variant="body" fontFamily="semiBold">
                 {formatVND(category?.budget_limit ?? 0)}
@@ -191,7 +193,7 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
             </View>
             <Box alignSelf="flex-end" marginTop="xs">
               <Text variant="label" color="primary" fontFamily="semiBold">
-                {category?.percent_limit?.toFixed(1)}% đã dùng
+                {category?.percent_limit?.toFixed(1)}% {t('common.used')}
               </Text>
             </Box>
           </Box>
@@ -221,13 +223,13 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
           <LoadingChildren />
         ) : sortedDates.length === 0 ? (
           <Box padding="l" alignItems="center">
-            <Text variant="body" color="secondaryText">Chưa có giao dịch</Text>
+            <Text variant="body" color="secondaryText">{t('finance.no_transaction')}</Text>
           </Box>
         ) : (
           <Box gap="m" paddingBottom="xl">
             {sortedDates.map(dateStr => {
               const items = groupedByDate[dateStr];
-              const label = formatDateGroupLabel(dateStr);
+              const label = formatDateGroupLabel(dateStr, t);
               return (
                 <Box key={dateStr}>
                   <Text

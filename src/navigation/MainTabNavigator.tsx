@@ -2,8 +2,6 @@ import AppButton from '@/components/button/AppButton';
 import { Theme } from '@/theme';
 import { Box, Text } from '@/theme/components';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { HomeScreen } from '@screens/Home/Home';
 import { ProfileScreen } from '@screens/Profile/Profile';
 import { StatisticsScreen } from '@screens/Statistics/Statistics';
@@ -14,13 +12,16 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { MainTabParamList, RootStackParamList } from './types';
+import { useTranslation } from 'react-i18next';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export const MainTabNavigator = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { t } = useTranslation();
   const { colors } = useTheme<Theme>();
-  const rootNavigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const AddPlaceholder = () => null;
   const triggerTabHaptic = () => {
@@ -93,7 +94,7 @@ export const MainTabNavigator = () => {
         options={{
           tabBarLabel: ({ focused }) => (
             <Text variant="label" color={focused ? 'primary' : 'secondaryText'}>
-              Trang chủ
+              {t('common.home')}
             </Text>
           ),
         }}
@@ -107,7 +108,7 @@ export const MainTabNavigator = () => {
         options={{
           tabBarLabel: ({ focused }) => (
             <Text variant="label" color={focused ? 'primary' : 'secondaryText'}>
-              Thống kê
+              {t('common.statistics')}
             </Text>
           ),
         }}
@@ -127,7 +128,7 @@ export const MainTabNavigator = () => {
                 accessibilityLabel={props.accessibilityLabel}
                 accessibilityState={props.accessibilityState}
                 testID={props.testID}
-                onPress={() => rootNavigation.navigate('TransactionForm')}
+                onPress={() => navigation.navigate('TransactionForm')}
                 style={[styles.addButton, { backgroundColor: '#ffffff' }]}
               >
                 <AppIcon name="plus" size={24} color={colors.primary} />
@@ -145,7 +146,7 @@ export const MainTabNavigator = () => {
         options={{
           tabBarLabel: ({ focused }) => (
             <Text variant="label" color={focused ? 'primary' : 'secondaryText'}>
-              Ví của tôi
+              {t('common.my_wallet')}
             </Text>
           ),
         }}
@@ -159,7 +160,7 @@ export const MainTabNavigator = () => {
         options={{
           tabBarLabel: ({ focused }) => (
             <Text variant="label" color={focused ? 'primary' : 'secondaryText'}>
-              Cá nhân
+              {t('common.profile')}
             </Text>
           ),
         }}

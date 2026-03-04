@@ -1,22 +1,10 @@
+import { MainTabParamList, RootStackParamList } from './types';
 import { createNavigationContainerRef } from '@react-navigation/native';
-import type { RootStackParamList } from './types';
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
-export function navigateToAuth() {
+export const navigateToMain = (tab: keyof MainTabParamList = 'Home') => {
   if (navigationRef.isReady()) {
-    navigationRef.reset({
-      index: 0,
-      routes: [{ name: 'AuthStack' }],
-    });
+    navigationRef.navigate('MainTab', { screen: tab });
   }
-}
-
-export function navigateToMain() {
-  if (navigationRef.isReady()) {
-    navigationRef.reset({
-      index: 0,
-      routes: [{ name: 'MainTab' }],
-    });
-  }
-}
+};

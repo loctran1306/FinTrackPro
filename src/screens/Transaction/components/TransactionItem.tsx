@@ -10,26 +10,29 @@ import { Theme } from "@/theme";
 import { Box, Text } from "@/theme/components";
 import { SPACING } from "@/theme/constant";
 import { toast } from "@/utils/toast";
-import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "@shopify/restyle";
 import { StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "@/navigation/types";
 
 type TransactionItemProps = {
     transaction: TransactionType;
     flashListRef?: any;
 }
 const TransactionItem = ({ transaction, flashListRef }: TransactionItemProps) => {
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const { t } = useTranslation();
     const { colors } = useTheme<Theme>();
-    const navigation = useNavigation();
-
     const dispatch = useAppDispatch();
 
     const handleDelete = async (id: string, reset: () => void) => {
         const result = await dispatch(deleteTransactionThunk(id)).unwrap();
         if (result) {
-            toast.success('Xóa giao dịch thành công');
+            toast.success(t('finance.delete_transaction_success'));
         } else {
-            toast.error('Xóa giao dịch thất bại');
+            toast.error(t('finance.delete_transaction_error'));
             reset();
             setTimeout(() => {
                 flashListRef?.current?.scrollToOffset({ offset: 0, animated: true });
@@ -41,9 +44,7 @@ const TransactionItem = ({ transaction, flashListRef }: TransactionItemProps) =>
     return (
         <AppSwipeable
             swipeableKey={transaction.id}
-            onPress={() =>
-                navigation.navigate('TransactionForm', { transaction: transaction })
-            }
+            onPress={() => navigation.navigate('TransactionForm', { transaction: transaction })}
             onDelete={reset => handleDelete(transaction.id, reset)}
         >
             <Box
@@ -80,7 +81,7 @@ const TransactionItem = ({ transaction, flashListRef }: TransactionItemProps) =>
                                 fontFamily="semiBold"
 
                             >
-                                {isIncome ? 'Thu nhập' : transaction.categories.name}
+                                {isIncome ? t('finance.income') : transaction.categories.name}
                             </Text>
                             <Text
                                 variant='subheader'

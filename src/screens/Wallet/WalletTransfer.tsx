@@ -23,8 +23,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
 import { useRef, useState } from 'react';
 import { Keyboard } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 const WalletTransferScreen = () => {
+  const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
@@ -95,16 +97,16 @@ const WalletTransferScreen = () => {
     setLoading(false);
     setIsComplete(false);
     if (resultRef.current) {
-      toast.success('Chuyển tiền thành công');
+      toast.success(t('finance.transfer_success'));
       navigation.goBack();
     } else {
-      toast.error('Chuyển tiền thất bại');
+      toast.error(t('finance.transfer_error'));
     }
   };
 
   return (
     <Screen padding="none">
-      <AppHeader title="Chuyển tiền" />
+      <AppHeader title={t('finance.transfer')} />
       <Box
         flexDirection="row"
         justifyContent="space-between"
@@ -136,7 +138,7 @@ const WalletTransferScreen = () => {
                 textDecorationLine="underline"
                 variant="caption"
               >
-                Chọn ví gửi
+                {t('finance.select_wallet_from')}
               </Text>
             )}
           </AppButton>
@@ -165,7 +167,7 @@ const WalletTransferScreen = () => {
                 textDecorationLine="underline"
                 variant="caption"
               >
-                Chọn ví nhận
+                {t('finance.select_wallet_to')}
               </Text>
             )}
           </AppButton>
@@ -190,7 +192,7 @@ const WalletTransferScreen = () => {
       </Box>
       <Box flex={1} padding="m">
         <Box alignItems="center" justifyContent="center" padding="m">
-          <Text variant="caption">Bạn muốn chuyển đi</Text>
+          <Text variant="caption">{t('finance.you_want_to_transfer')}</Text>
           <AppButton
             shadow={false}
             onPress={() => setHiddenCalculator(!hiddenCalculator)}
@@ -210,7 +212,7 @@ const WalletTransferScreen = () => {
             noBorder
             value={note}
             onChangeText={setNote}
-            placeholder="Nhập nội dung"
+            placeholder={t('common.enter_note')}
             textAlign="center"
           />
         </Box>
@@ -236,7 +238,7 @@ const WalletTransferScreen = () => {
               >
                 <AppIcon name="arrow-right" size={20} color="white" />
                 <Text variant="body" fontFamily="semiBold" color="white">
-                  Chuyển tiền
+                  {t('finance.transfer')}
                 </Text>
               </Box>
             </AppButton>
@@ -254,7 +256,7 @@ const WalletTransferScreen = () => {
       <AppBottomSheet ref={bottomSheetRef} snapPoints={['50%', '80%']}>
         <Box backgroundColor="main" flex={1} gap="l">
           <Box gap="sm">
-            <Text variant="subheader">Ví Thanh toán</Text>
+            <Text variant="subheader">{t('finance.payment_wallet')}</Text>
             {paymentWallets?.map(wallet => {
               const isDisabled =
                 selectedWalletType === 'from'
@@ -287,7 +289,7 @@ const WalletTransferScreen = () => {
           </Box>
           {selectedWalletType === 'to' && (
             <Box gap="sm">
-              <Text variant="subheader">Thẻ tín dụng</Text>
+              <Text variant="subheader">{t('finance.credit_wallet')}</Text>
               {creditWallets?.map(wallet => {
                 const isSelected =
                   selectedWalletType === 'to' && wallet.id === walletTo?.id;

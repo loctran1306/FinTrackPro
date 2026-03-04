@@ -19,8 +19,10 @@ import { Box, Text } from '@theme/components';
 import React, { useCallback, useRef, useState } from 'react';
 import { Image, Platform, StyleSheet } from 'react-native';
 import 'react-native-url-polyfill/auto';
+import { useTranslation } from 'react-i18next';
 
 export default function LoginScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { colors } = useTheme<Theme>();
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
@@ -41,7 +43,7 @@ export default function LoginScreen({ navigation }: any) {
       console.log(error);
       loginResultRef.current = {
         session: null,
-        error: 'Đã có lỗi hệ thống xảy ra',
+        error: t('auth.system_error'),
       };
     } finally {
       // API đã trả về kết quả (dù thành công hay thất bại)
@@ -101,7 +103,7 @@ export default function LoginScreen({ navigation }: any) {
             FinTrackPro
           </Text>
           <Text variant="caption" color="secondaryText" textAlign="center">
-            Quản lý tài chính dễ dàng và hiệu quả
+            {t('common.caption_app')}
           </Text>
         </Box>
 
@@ -137,7 +139,7 @@ export default function LoginScreen({ navigation }: any) {
                   family="brands"
                 />
                 <Text variant="subheader" color="text" marginLeft="s">
-                  Tiếp tục với Google
+                  {t('auth.continue_with_google')}
                 </Text>
               </Box>
             </AppButton>
@@ -145,8 +147,8 @@ export default function LoginScreen({ navigation }: any) {
         </Box>
 
         <Text variant="label" textAlign="center" color="secondaryText">
-          Bằng cách đăng nhập, bạn đồng ý với {'\n'}
-          <Text color="primary">Điều khoản & Chính sách</Text> của chúng tôi
+          {t('auth.by_logging_in')} {'\n'}
+          <Text color="primary">{t('auth.terms_and_conditions')}</Text> {t('auth.of_our_terms_and_conditions')}
         </Text>
       </Box>
     </Screen>

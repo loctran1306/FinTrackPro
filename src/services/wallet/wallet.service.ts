@@ -32,6 +32,17 @@ export const walletService = {
     return data;
   },
 
+  updateBalance: async (walletId: string, currentBalance: number) => {
+    const { data, error } = await supabase
+      .from('wallets')
+      .update({ current_balance: currentBalance })
+      .eq('id', walletId)
+      .select('id,display_name,wallet_type,current_balance,credit_limit')
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   transfer: async (walletTransferData: WalletTransferType) => {
     const { data, error } = await supabase.rpc('transfer_money', {
       p_from_wallet_id: walletTransferData.p_from_wallet_id,

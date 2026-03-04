@@ -91,4 +91,27 @@ export const transactionService = {
 
     return normalizedResponseTransaction(response);
   },
+
+  async handleAITransaction(userQuery: string) {
+    try {
+      // 1. Gọi Edge Function 'ai-transaction'
+      const { data, error } = await supabase.functions.invoke(
+        'ai-transaction',
+        {
+          body: {
+            query: userQuery,
+            currentTime: new Date().toISOString(),
+          },
+        },
+      );
+
+      if (error) throw error;
+
+      if (data.success) {
+        return data.result;
+      }
+    } catch (err) {
+      console.error('Lỗi khi gọi AI:', err);
+    }
+  },
 };

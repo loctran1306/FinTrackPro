@@ -28,10 +28,11 @@ import { Box, Text } from '@/theme/components';
 import { RADIUS, SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
 import moment from 'moment';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Keyboard, TouchableOpacity } from 'react-native';
 
 type TransactionMode = 'expense' | 'income';
@@ -39,6 +40,7 @@ type TransactionMode = 'expense' | 'income';
 
 const TransactionForm = ({ route }: RootStackScreenProps<'TransactionForm'>) => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { t } = useTranslation();
   const { colors } = useTheme<Theme>();
   const transaction = route.params?.transaction;
   const isEdit = !!transaction;
@@ -155,7 +157,6 @@ const TransactionForm = ({ route }: RootStackScreenProps<'TransactionForm'>) => 
       category_id: type === 'expense' ? selectedCategory?.id || null : null,
       date: newDate,
       wallet_id: selectedWallet?.id || '',
-      user_id: session.user.id,
     };
 
     try {
@@ -181,31 +182,44 @@ const TransactionForm = ({ route }: RootStackScreenProps<'TransactionForm'>) => 
     }
   };
 
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainTab', { screen: 'Home' });
+    }
+  };
+
   const handleSaveComplete = () => {
     setIsComplete(false);
     setLoading(false);
     if (resultRef.current) {
       toast.success(
-        isEdit ? 'Cập nhật giao dịch thành công' : 'Thêm giao dịch thành công',
+        isEdit
+          ? t('finance.edit_transaction_success')
+          : t('finance.add_transaction_success'),
       );
-      setTimeout(() => {
-        navigation.goBack();
-      }, 100);
+      setTimeout(() => handleGoBack(), 100);
     } else {
       toast.error(
-        isEdit ? 'Cập nhật giao dịch thất bại' : 'Thêm giao dịch thất bại',
+        isEdit
+          ? t('finance.edit_transaction_error')
+          : t('finance.add_transaction_error'),
       );
     }
   };
 
   return (
     <Screen padding="none" backgroundColor="main">
-      <AppHeader title={isEdit ? 'Sửa giao dịch' : 'Thêm giao dịch'} />
+      <AppHeader
+        title={isEdit ? t('finance.edit_transaction') : t('finance.add_transaction')}
+        backButton={handleGoBack}
+      />
       <AppScrollView onRefresh={async () => { }}>
         {/* Tabs */}
         <Box flexDirection="row" padding="m" gap="m">
-          {renderTab('expense', 'Khoản chi')}
-          {renderTab('income', 'Khoản thu')}
+          {renderTab('expense', t('finance.expense'))}
+          {renderTab('income', t('finance.income'))}
         </Box>
 
         {/* Amount Input */}
@@ -217,7 +231,7 @@ const TransactionForm = ({ route }: RootStackScreenProps<'TransactionForm'>) => 
             }}
           >
             <Text textAlign="center" variant="caption" color="secondaryText">
-              Nhập số tiền
+              {t('finance.amount')}
             </Text>
             <Text
               textAlign="center"
@@ -229,11 +243,11 @@ const TransactionForm = ({ route }: RootStackScreenProps<'TransactionForm'>) => 
             </Text>
           </TouchableOpacity>
           <AppInput
-            onFocus={() => calculatorSheetRef.current?.close}
+            onFocus={() => calculatorSheetRef.current?.close()}
             noBorder
             value={note}
             onChangeText={setNote}
-            placeholder="Nhập nội dung"
+            placeholder={t('common.enter_note')}
             textAlign="center"
           />
         </Box>
@@ -275,7 +289,7 @@ const TransactionForm = ({ route }: RootStackScreenProps<'TransactionForm'>) => 
           {type === 'expense' && (
             <Box gap="s">
               <Text variant="body" color="secondaryText">
-                Danh mục
+                {t('finance.category')}
               </Text>
               <Box flexDirection="row" flexWrap="wrap" gap="s">
                 {categories?.map(category => {
@@ -328,7 +342,7 @@ const TransactionForm = ({ route }: RootStackScreenProps<'TransactionForm'>) => 
           {/* Wallet Selection */}
           <Box gap="s">
             <Text variant="body" color="secondaryText">
-              Ví
+              {t('finance.wallet')}
             </Text>
             <Box flexDirection="row" flexWrap="wrap" gap="s">
               {allWallets.map(wallet => {
@@ -402,8 +416,8 @@ const TransactionForm = ({ route }: RootStackScreenProps<'TransactionForm'>) => 
               onPress={handleSaveTransaction}
               backgroundColor={type === 'expense' ? 'danger' : 'success'}
             >
-              <Text textAlign="center" variant="subheader" color="white">
-                Lưu giao dịch
+              <Text textAlign="center" variant="subheader" color="white" textTransform="uppercase">
+                {t('finance.save_transaction')}
               </Text>
             </AppButton>
           )}
@@ -416,6 +430,7 @@ const TransactionForm = ({ route }: RootStackScreenProps<'TransactionForm'>) => 
         ref={calculatorSheetRef}
         snapPoints={[320]}
         hideBackdrop
+        hideContentPadding
       >
         <CalculatorKeyboard
           onValueChange={setAmount}

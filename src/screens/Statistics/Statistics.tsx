@@ -23,7 +23,9 @@ import { useTheme } from '@shopify/restyle';
 import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LOCALE_VI } from '@/constants/locale.const';
+import { LOCALE_EN, LOCALE_VI } from '@/constants/locale.const';
+import { useTranslation } from 'react-i18next';
+import ButtonIcon from '@/components/button/ButtonIcon';
 
 
 
@@ -32,6 +34,7 @@ import { LOCALE_VI } from '@/constants/locale.const';
 const CHART_SIZE = 200;
 
 export const StatisticsScreen = () => {
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
   const [monthPickerVisible, setMonthPickerVisible] = useState(false);
@@ -45,7 +48,7 @@ export const StatisticsScreen = () => {
 
 
   const sortedCategories = useMemo(() => {
-    return [...(categories || [])].sort((a, b) => b.amount - a.amount);
+    return [...(categories || [])].sort((a, b) => b.budget_limit - a.budget_limit);
   }, [categories]) || [];
 
   const chartData: DoughnutSegment[] | undefined = categories?.map((item: CategoryItem) => ({
@@ -82,18 +85,19 @@ export const StatisticsScreen = () => {
       >
         <Box paddingHorizontal="m" paddingTop="m" style={{ paddingTop: topSafeArea }}>
           <Text variant="header" textAlign="center" >
-            Báo cáo chi tiêu
+            {t('finance.report_expense')}
           </Text>
 
-          <AppButton style={{ width: '50%', alignSelf: 'center' }} onPress={() => setMonthPickerVisible(true)}>
-            <Box backgroundColor="card" padding="s" borderRadius={RADIUS.xl}>
-              <Text textAlign="center" variant="subheader" color='primary'>
-                {LOCALE_VI.monthNames[time.month - 1]} {time.year}
-              </Text>
-            </Box>
-          </AppButton>
+          <Box flexDirection="row" alignItems="center" justifyContent="center" marginBottom="s">
+            <AppButton style={{ flex: 1 }} onPress={() => setMonthPickerVisible(true)}>
+              <Box backgroundColor="card" paddingVertical='s' paddingHorizontal='m' borderRadius={RADIUS.xl}>
+                <Text textAlign="center" variant="subheader" color="primary">
+                  {i18n.language === 'vi' ? LOCALE_VI.monthNames[time.month - 1] : LOCALE_EN.monthNames[time.month - 1]} {time.year}
+                </Text>
+              </Box>
+            </AppButton>
 
-
+          </Box>
 
           {/* Doughnut chart */}
           <Box
@@ -121,7 +125,7 @@ export const StatisticsScreen = () => {
                       height={CHART_SIZE}
                       pointerEvents="none"
                     >
-                      <Text variant="label" color="secondaryText">Tổng chi</Text>
+                      <Text variant="label" color="secondaryText">{t('finance.total_expense')}</Text>
                       <Text variant="subheader">{formatVND(totalSpend)}</Text>
                     </Box>
                   )}
@@ -138,7 +142,17 @@ export const StatisticsScreen = () => {
             loading ? (
               <LoadingChildren />
             ) : (
-              <>
+              <Box>
+
+                <AppButton
+                  onPress={() => navigation.navigate('CategoryForm')}
+                  style={{ padding: 0, paddingBottom: SPACING.m, alignSelf: 'flex-end' }}
+                >
+                  <Box flexDirection="row" alignItems="center" justifyContent="center" gap="s">
+                    <AppIcon name="plus" size={16} color={colors.primary} />
+                    <Text variant="subheader" color="primary">{t('finance.add_category')}</Text>
+                  </Box>
+                </AppButton>
                 {sortedCategories.map(item => (
                   <Pressable
                     key={item.id}
@@ -184,7 +198,7 @@ export const StatisticsScreen = () => {
                                 style={{ backgroundColor: item.color + '30' }}
                               >
                                 <Text variant="label" style={{ color: item.color }}>
-                                  {`Còn: ${formatVND(Number(item.remaining))}/ngày`}
+                                  {`${t('finance.remaining')}: ${formatVND(Number(item.remaining))}/${t('time.day')}`}
                                 </Text>
                               </Box>
                             </Box>
@@ -215,7 +229,8 @@ export const StatisticsScreen = () => {
                     </Box>
                   </Pressable>
                 ))}
-              </>
+
+              </Box>
             )
           }
 

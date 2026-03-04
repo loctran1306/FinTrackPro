@@ -1,6 +1,6 @@
 import { Theme } from '@/theme';
 import { Box, Text } from '@/theme/components';
-import { RADIUS } from '@/theme/constant';
+import { RADIUS, SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
 import { useTheme } from '@shopify/restyle';
 import { evaluate } from 'mathjs';
@@ -107,9 +107,9 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
       entering={SlideInDown.duration(300)}
       exiting={SlideOutDown.duration(300)}
     >
-      <Box backgroundColor="main" gap="s">
+      <Box backgroundColor='main' gap="s">
         <Box paddingHorizontal="m">
-          <Text textAlign="center" color="primary">
+          <Text fontSize={24} textAlign="center" color="primary">
             {formatDisplay(expr) || '0'}
           </Text>
         </Box>
@@ -120,7 +120,7 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
           flexWrap="wrap"
           justifyContent="center"
           alignItems="center"
-          gap="s"
+          gap='xs'
         >
           {buttons.map(btn => {
             const isOperator = ['+', '-', '*', '/', '=', 'DEL', 'C'].includes(
@@ -130,26 +130,26 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
 
             return (
               <AppButton
+                shadow={true}
                 key={btn}
                 onPress={() => handlePress(btn)}
                 style={{
-                  width: width / 5,
+                  width: width / 4 - SPACING.xs * 2,
                   height: 40,
                   justifyContent: 'center',
                   alignItems: 'center',
                   backgroundColor: isOperator
                     ? colors.highlight
                     : isOK
-                    ? colors.primary
-                    : colors.main,
+                      ? colors.primary
+                      : colors.main,
                   borderRadius: RADIUS.m,
                   padding: 0,
                 }}
               >
                 <Text
-                  variant="body"
                   color={isOK ? 'white' : 'text'}
-                  fontFamily="semiBold"
+                  fontSize={20}
                 >
                   {btn === '*' ? 'x' : btn}
                 </Text>
