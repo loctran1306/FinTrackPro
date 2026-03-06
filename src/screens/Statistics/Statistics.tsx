@@ -390,13 +390,18 @@ const Statistics = ({ categories, time }: Props) => {
   );
 };
 
-const enhance = withObservables(['time'], ({ time }: { time: TimeState }) => ({
-  categories: observeCategoryStats(time.month, time.year),
-}));
+const enhance = withObservables(
+  ['time', 'userId'],
+  ({ time, userId }: { time: TimeState; userId: string }) => ({
+    categories: observeCategoryStats(userId, time.month, time.year),
+  }),
+);
 
 const EnhancedStatistics = enhance(Statistics);
 
 export default function StatisticsScreen() {
+  const session = useAppSelector(state => state.auth.session);
   const { time } = useAppSelector(state => state.global);
-  return <EnhancedStatistics time={time} />;
+  if (!session) return null;
+  return <EnhancedStatistics time={time} userId={session.user.id} />;
 }

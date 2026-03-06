@@ -9,17 +9,23 @@ import { CategoryItem } from '@/services/category/category.type';
 
 /** Lấy stats của 1 category theo ID (dùng cho CategoryDetail) */
 export const observeCategoryStatById = (
+  userId: string,
   categoryId: string,
   p_month: number,
   p_year: number,
 ): Observable<CategoryItem | null> => {
-  if (!categoryId) return of(null);
-  return observeCategoryStats(p_month, p_year).pipe(
+  if (!categoryId || !userId || !p_month || !p_year) return of(null);
+  return observeCategoryStats(userId, p_month, p_year).pipe(
     map(items => items.find(c => c.id === categoryId) ?? null),
   );
 };
 
-export const observeCategoryStats = (p_month: number, p_year: number) => {
+export const observeCategoryStats = (
+  userId: string,
+  p_month: number,
+  p_year: number,
+): Observable<CategoryItem[]> => {
+  if (!userId || !p_month || !p_year) return of([]);
   // 1. Tính toán ngày (Tương đương logic Step 2 trong SQL)
   const targetDate = dayjs()
     .year(p_year)
@@ -38,13 +44,14 @@ export const observeCategoryStats = (p_month: number, p_year: number) => {
   // observeWithColumns: react khi name, icon, color, limit thay đổi
   const categories$ = database.collections
     .get<Category>('categories')
-    .query()
+    .query(Q.where('user_id', userId), Q.where('deleted_at', null))
     .observeWithColumns(['name', 'icon', 'color', 'limit']);
   const transactions$ = database.collections
     .get<Transaction>('transactions')
     .query(
       Q.where('type', 'expense'),
       Q.where('date', Q.between(startOfMonth, endOfMonth)),
+      Q.where('user_id', userId),
       Q.where('deleted_at', null),
     )
     .observeWithColumns(['amount', 'category_id', 'deleted_at', 'wallet_id']);

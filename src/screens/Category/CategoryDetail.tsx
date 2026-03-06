@@ -262,10 +262,24 @@ const CategoryDetail = ({ categoryId, category, transactions = [] }: Props) => {
 };
 
 const enhance = withObservables(
-  ['categoryId', 'time'],
-  ({ categoryId, time }: { categoryId: string; time: TimeState }) => ({
-    category: observeCategoryStatById(categoryId, time.month, time.year),
+  ['categoryId', 'time', 'userId'],
+  ({
+    categoryId,
+    time,
+    userId,
+  }: {
+    categoryId: string;
+    time: TimeState;
+    userId: string;
+  }) => ({
+    category: observeCategoryStatById(
+      userId,
+      categoryId,
+      time.month,
+      time.year,
+    ),
     transactions: observeTransactionsByCategory(
+      userId,
       categoryId,
       time.month,
       time.year,
@@ -279,7 +293,14 @@ export default function CategoryDetailScreen() {
   const categoryId =
     useRoute<RouteProp<RootStackParamList, 'CategoryDetail'>>().params
       ?.categoryId;
+  const session = useAppSelector(state => state.auth.session);
   const { time } = useAppSelector(state => state.global);
-  if (!categoryId) return null;
-  return <EnhancedCategoryDetailScreen categoryId={categoryId} time={time} />;
+  if (!categoryId || !session) return null;
+  return (
+    <EnhancedCategoryDetailScreen
+      categoryId={categoryId}
+      time={time}
+      userId={session.user.id}
+    />
+  );
 }

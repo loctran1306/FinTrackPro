@@ -1,8 +1,10 @@
 import { database } from '@/models';
 import Category from '@/models/Category';
 import { syncData } from '@/services/sync/syncDataSupabase';
+import { toast } from '@/utils/toast';
 import { Q } from '@nozbe/watermelondb';
 import { Observable } from 'rxjs';
+import { v4 as uuidv4 } from 'uuid';
 
 export const observeCategories = (userId: string): Observable<Category[]> => {
   return database.collections
@@ -21,6 +23,7 @@ export const createCategory = async (data: {
 }) => {
   await database.write(async () => {
     await database.get<Category>('categories').create(c => {
+      c._raw.id = uuidv4();
       c.name = data.name;
       c.icon = data.icon;
       c.color = data.color;
@@ -53,9 +56,27 @@ export const updateCategory = async (
 };
 
 // XÓA DANH MỤC (Soft Delete)
-export const deleteCategory = async (category: Category) => {
-  await database.write(async () => {
+export const deleteCategory = async (
+  category: Category,
+): Promise<Category | null> => {
+  // Kiểm tra xem có giao dịch nào liên quan không
+  const relatedTransactions = await database.collections
+    .get('transactions')
+    .query(
+      Q.where('category_id', category.id),
+      Q.where('user_id', category.userId),
+      Q.where('deleted_at', null),
+    )
+    .fetchCount();
+
+  if (relatedTransactions > 0) {
+    return null;
+  }
+
+  const result = await database.write(async () => {
     await category.markAsDeleted();
+    return category;
   });
   syncData().catch(console.error);
+  return result;
 };

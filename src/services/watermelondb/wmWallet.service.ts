@@ -3,6 +3,7 @@ import Wallet from '@/models/Wallet';
 import { syncData } from '@/services/sync/syncDataSupabase';
 import { Observable } from 'rxjs';
 import { Q } from '@nozbe/watermelondb';
+import { v4 as uuidv4 } from 'uuid';
 
 export const observeWallets = (userId: string): Observable<Wallet[]> => {
   return database.collections
@@ -42,6 +43,7 @@ export const createWallet = async (data: {
 }) => {
   await database.write(async () => {
     await database.get<Wallet>('wallets').create(w => {
+      w._raw.id = uuidv4();
       w.displayName = data.displayName;
       w.walletType = data.walletType;
       w.initialBalance = data.initialBalance;
@@ -72,9 +74,24 @@ export const updateWallet = async (
 };
 
 // XÓA VÍ (Soft Delete)
-export const deleteWallet = async (wallet: Wallet) => {
-  await database.write(async () => {
+export const deleteWallet = async (wallet: Wallet): Promise<Wallet | null> => {
+  // Kiểm tra xem có giao dịch nào liên quan không
+  const relatedTransactions = await database.collections
+    .get('transactions')
+    .query(
+      Q.where('wallet_id', wallet.id),
+      Q.where('user_id', wallet.userId),
+      Q.where('deleted_at', null),
+    )
+    .fetchCount();
+
+  if (relatedTransactions > 0) {
+    return null;
+  }
+  const result = await database.write(async () => {
     await wallet.markAsDeleted();
+    return wallet;
   });
   syncData().catch(console.error);
+  return result;
 };

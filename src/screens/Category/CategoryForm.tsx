@@ -22,18 +22,16 @@ import { Theme } from '@/theme';
 import { RADIUS, SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import {
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+} from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text } from '@theme/components';
 import { useFormik } from 'formik';
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Alert,
-  ScrollView,
-  Switch,
-  TouchableOpacity,
-} from 'react-native';
+import { Alert, ScrollView, Switch, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Yup from 'yup';
 import withObservables from '@nozbe/with-observables';
@@ -44,7 +42,10 @@ import { of } from 'rxjs';
 type FormProps = {
   categoryId?: string;
   category: Category | null;
-  navigation: NativeStackScreenProps<RootStackParamList, 'CategoryForm'>['navigation'];
+  navigation: NativeStackScreenProps<
+    RootStackParamList,
+    'CategoryForm'
+  >['navigation'];
 };
 
 const CategoryFormInner = ({ categoryId, category, navigation }: FormProps) => {
@@ -118,7 +119,6 @@ const CategoryFormInner = ({ categoryId, category, navigation }: FormProps) => {
     },
   });
 
-
   const handleDelete = () => {
     if (!isEdit || !category) return;
     Alert.alert(
@@ -131,12 +131,22 @@ const CategoryFormInner = ({ categoryId, category, navigation }: FormProps) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await wmCategory.deleteCategory(category);
-              toast.success(t('finance.delete_category_success'));
-              navigateToMain('Statistics');
+              const deletedCategory = await wmCategory.deleteCategory(category);
+              if (deletedCategory) {
+                toast.success(t('finance.delete_category_success'));
+                navigateToMain('Statistics');
+              } else {
+                toast.error(
+                  t('common.error').toLocaleUpperCase(),
+                  t('warning.delete_category_error_dependency'),
+                );
+              }
             } catch (error) {
               if ((error as any).code === '23503') {
-                toast.error(t('common.error').toLocaleUpperCase(), t('warning.delete_category_error_dependency'));
+                toast.error(
+                  t('common.error').toLocaleUpperCase(),
+                  t('warning.delete_category_error_dependency'),
+                );
               } else {
                 toast.error(t('finance.delete_category_error'));
               }
@@ -326,7 +336,9 @@ const CategoryFormInner = ({ categoryId, category, navigation }: FormProps) => {
                 shadow={false}
                 backgroundColor="card"
               >
-                <Text color="primary" variant="label">{`- ${formatVND(500)}`}</Text>
+                <Text color="primary" variant="label">{`- ${formatVND(
+                  500,
+                )}`}</Text>
               </AppButton>
 
               <AppButton
@@ -334,7 +346,9 @@ const CategoryFormInner = ({ categoryId, category, navigation }: FormProps) => {
                 shadow={false}
                 backgroundColor="card"
               >
-                <Text color="primary" variant="label">{`+ ${formatVND(500)}`}</Text>
+                <Text color="primary" variant="label">{`+ ${formatVND(
+                  500,
+                )}`}</Text>
               </AppButton>
             </Box>
           </Box>
@@ -384,24 +398,13 @@ const CategoryFormInner = ({ categoryId, category, navigation }: FormProps) => {
             onPress={formCategory.handleSubmit}
             backgroundColor="primary"
           >
-            <Text
-              textAlign="center"
-              color="white"
-              textTransform="uppercase"
-            >
+            <Text textAlign="center" color="white" textTransform="uppercase">
               {isEdit ? t('common.update') : t('common.create')}
             </Text>
           </AppButton>
           {isEdit ? (
-            <AppButton
-              onPress={handleDelete}
-              backgroundColor="danger"
-            >
-              <Text
-                textAlign="center"
-                color="white"
-                textTransform="uppercase"
-              >
+            <AppButton onPress={handleDelete} backgroundColor="danger">
+              <Text textAlign="center" color="white" textTransform="uppercase">
                 {t('finance.delete_category')}
               </Text>
             </AppButton>
@@ -422,7 +425,9 @@ const enhance = withObservables(
   ['categoryId'],
   ({ categoryId }: { categoryId?: string }) => ({
     category: categoryId
-      ? database.collections.get<Category>('categories').findAndObserve(categoryId)
+      ? database.collections
+          .get<Category>('categories')
+          .findAndObserve(categoryId)
       : of(null),
   }),
 );
@@ -430,12 +435,13 @@ const enhance = withObservables(
 const EnhancedCategoryForm = enhance(CategoryFormInner);
 
 export default function CategoryFormScreen() {
-  const { categoryId } = useRoute<RouteProp<RootStackParamList, 'CategoryForm'>>().params ?? {};
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'CategoryForm'>>();
+  const { categoryId } =
+    useRoute<RouteProp<RootStackParamList, 'CategoryForm'>>().params ?? {};
+  const navigation =
+    useNavigation<
+      NativeStackNavigationProp<RootStackParamList, 'CategoryForm'>
+    >();
   return (
-    <EnhancedCategoryForm
-      categoryId={categoryId}
-      navigation={navigation}
-    />
+    <EnhancedCategoryForm categoryId={categoryId} navigation={navigation} />
   );
 }

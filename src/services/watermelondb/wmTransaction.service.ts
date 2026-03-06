@@ -30,6 +30,7 @@ export const observeTransactionCount = (userId: string) => {
 };
 
 export const observeTransactionsByCategory = (
+  userId: string,
   categoryId: string,
   month: number,
   year: number,
@@ -39,6 +40,7 @@ export const observeTransactionsByCategory = (
   return database.collections
     .get<Transaction>('transactions')
     .query(
+      Q.where('user_id', userId),
       Q.where('category_id', categoryId),
       Q.where('type', 'expense'),
       Q.where('date', Q.between(startOfMonth, endOfMonth)),
