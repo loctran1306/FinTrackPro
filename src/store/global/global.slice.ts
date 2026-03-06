@@ -3,20 +3,24 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
+export type TimeState = {
+  month: number;
+  year: number;
+};
+
 type GlobalState = {
   theme: ThemeMode;
   hiddenCurrency: boolean;
   isNetworkConnected: boolean;
-  time: {
-    month: number;
-    year: number;
-  };
+  isSyncEnabled: boolean;
+  time: TimeState;
 };
 
 const initialState: GlobalState = {
   theme: (storageUtils.getTheme() as ThemeMode) || 'system',
   hiddenCurrency: false,
-  isNetworkConnected: true,
+  isNetworkConnected: false,
+  isSyncEnabled: true,
   time: {
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
@@ -37,12 +41,20 @@ const globalSlice = createSlice({
     setNetworkStatus(state, action: PayloadAction<{ isConnected: boolean }>) {
       state.isNetworkConnected = action.payload.isConnected;
     },
+    setSyncEnabled(state, action: PayloadAction<boolean>) {
+      state.isSyncEnabled = action.payload;
+    },
     setTime(state, action: PayloadAction<{ month: number; year: number }>) {
       state.time = action.payload;
     },
   },
 });
 
-export const { setTheme, setHiddenCurrency, setNetworkStatus, setTime } =
-  globalSlice.actions;
+export const {
+  setTheme,
+  setHiddenCurrency,
+  setNetworkStatus,
+  setSyncEnabled,
+  setTime,
+} = globalSlice.actions;
 export default globalSlice.reducer;

@@ -6,7 +6,7 @@ export type FinanceOverview = {
   net_worth: number;
   monthly_income: number;
   monthly_expense: number;
-  period: string;
+  period: string | number;
 };
 
 export type WalletType = {

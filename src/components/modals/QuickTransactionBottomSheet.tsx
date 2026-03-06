@@ -3,14 +3,12 @@ import AppBottomSheet, {
   AppBottomSheetRef,
 } from '@/components/common/AppBottomSheet';
 import AppIcon from '@/components/common/AppIcon';
-import { CreateTransactionType } from '@/services/transaction/transaction.type';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { createTransactionThunk } from '@/store/transaction/transaction.thunk';
-import { selectWallets } from '@/store/wallet/wallet.selector';
+import { transactionService } from '@/services/transaction/transaction.service';
 import { Theme } from '@/theme';
 import { Box, Text } from '@/theme/components';
 import { SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useTheme } from '@shopify/restyle';
 import React, {
   forwardRef,
@@ -19,8 +17,6 @@ import React, {
   useState,
 } from 'react';
 import { ScrollView, TouchableOpacity } from 'react-native';
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
-import { transactionService } from '@/services/transaction/transaction.service';
 import LoadingWithLogo from '../loading/LoadingWithLogo';
 
 const QUICK_ACTIONS = [
@@ -40,28 +36,15 @@ const QuickTransactionBottomSheet = forwardRef<
   object
 >((_, ref) => {
   const { colors } = useTheme<Theme>();
-  const dispatch = useAppDispatch();
   const sheetRef = useRef<AppBottomSheetRef>(null);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingComplete, setLoadingComplete] = useState(false);
-  const { session } = useAppSelector(state => state.auth);
-  const { categories } = useAppSelector(state => state.category);
-  const { creditWallets, paymentWallets } = useAppSelector(selectWallets);
-  const allWallets = [...(paymentWallets || []), ...(creditWallets || [])];
 
   useImperativeHandle(ref, () => ({
     expand: () => sheetRef.current?.expand(),
     close: () => sheetRef.current?.close(),
   }));
-
-  const defaultWallet =
-    allWallets.find(
-      w => w.wallet_type === 'cash' || w.display_name === 'Tiền mặt',
-    ) || allWallets[0];
-  const defaultCategory =
-    categories?.find(c => c.name === 'Ăn uống' || c.name === 'Eating') ||
-    categories?.[0];
 
   const handleQuickAction = (label: string) => {
     setInput(label);
@@ -200,17 +183,20 @@ const QuickTransactionBottomSheet = forwardRef<
           backgroundColor="primary"
           shadow={false}
           style={{
-
             borderRadius: 9999,
             paddingVertical: SPACING.s,
           }}
         >
-          <Box flexDirection="row" justifyContent="center" alignItems="center" gap="xs">
+          <Box
+            flexDirection="row"
+            justifyContent="center"
+            alignItems="center"
+            gap="xs"
+          >
             <AppIcon name="plus" size={14} color="white" />
           </Box>
         </AppButton>
       </Box>
-
 
       <Box alignItems="center" justifyContent="center">
         {loading && (

@@ -111,6 +111,9 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+    packagingOptions {
+        pickFirst '**/libc++_shared.so'
+    }
 }
 
 dependencies {
@@ -119,6 +122,8 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:34.9.0')
     implementation 'com.google.firebase:firebase-messaging'
     implementation project(':react-native-vector-icons')
+    implementation project(':watermelondb')
+    implementation project(':watermelondb-jsi')
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

@@ -16,7 +16,6 @@ import { walletService } from '@/services/wallet/wallet.service';
 import { WalletType } from '@/services/wallet/wallet.type';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { updateWallet } from '@/store/wallet/wallet.slice';
-import { getFinanceOverviewThunk } from '@/store/wallet/wallet.thunk';
 import { selectWallets } from '@/store/wallet/wallet.selector';
 import { Theme } from '@/theme';
 import { Box, Text } from '@/theme/components';
@@ -33,17 +32,15 @@ import { WALLET_TYPES } from '@/constants/wallet';
 
 const BalanceAdjustmentScreen = () => {
   const { t } = useTranslation();
-  const navigation = useNavigation<
-    NativeStackNavigationProp<RootStackParamList>
-  >();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
   const dispatch = useAppDispatch();
   const { creditWallets, paymentWallets } = useAppSelector(selectWallets);
   const { hiddenCurrency } = useAppSelector(state => state.global);
 
   const [selectedWallet, setSelectedWallet] = useState<WalletType | null>(null);
-  const [amountInput, setAmountInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [amountInput, setAmountInput] = useState(0);
 
   const calculatorSheetRef = useRef<AppBottomSheetRef>(null);
 
@@ -61,16 +58,13 @@ const BalanceAdjustmentScreen = () => {
   const handleWalletPress = (wallet: WalletType) => {
     const displayBalance = convertFromDbAmount(wallet.current_balance);
     setSelectedWallet(wallet);
-    setAmountInput(
-      displayBalance > 0 ? displayBalance.toString() : '',
-    );
+    setAmountInput(displayBalance > 0 ? displayBalance : 0);
     calculatorSheetRef.current?.expand();
   };
 
   const handleCalculatorDone = async (result: number) => {
     if (!selectedWallet) return;
     try {
-      setLoading(true);
       const dbAmount = convertToDbAmount(result);
       const updated = await walletService.updateBalance(
         selectedWallet.id,
@@ -83,7 +77,7 @@ const BalanceAdjustmentScreen = () => {
             current_balance: dbAmount,
           }),
         );
-        dispatch(getFinanceOverviewThunk());
+        // dispatch(getFinanceOverviewThunk());
         toast.success(t('finance.update_balance_success'));
         calculatorSheetRef.current?.close();
         setSelectedWallet(null);
@@ -92,8 +86,6 @@ const BalanceAdjustmentScreen = () => {
       }
     } catch {
       toast.error(t('finance.update_balance_error'));
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -155,7 +147,9 @@ const BalanceAdjustmentScreen = () => {
                   <Box>
                     <Text variant="subheader">{wallet.display_name}</Text>
                     <Text variant="caption" color="secondaryText">
-                      {WALLET_TYPES[wallet.wallet_type as keyof typeof WALLET_TYPES] || wallet.wallet_type}
+                      {WALLET_TYPES[
+                        wallet.wallet_type as keyof typeof WALLET_TYPES
+                      ] || wallet.wallet_type}
                     </Text>
                   </Box>
                 </Box>
@@ -176,7 +170,7 @@ const BalanceAdjustmentScreen = () => {
   };
 
   return (
-    <Screen padding="none" edges={[]}>
+    <Screen padding="none">
       <AppHeader
         title={t('finance.update_balance')}
         backButton={handleGoBack}
@@ -188,26 +182,12 @@ const BalanceAdjustmentScreen = () => {
           </Text>
         </Box>
 
-        {renderWalletList(
-          t('finance.payment_wallet'),
-          paymentWallets,
-        )}
-        {renderWalletList(
-          t('finance.credit_wallet'),
-          creditWallets,
-        )}
+        {renderWalletList(t('finance.payment_wallet'), paymentWallets)}
+        {renderWalletList(t('finance.credit_wallet'), creditWallets)}
 
         {allWallets.length === 0 && (
-          <Box
-            padding="xl"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <AppIcon
-              name="wallet"
-              size={48}
-              color={colors.secondaryText}
-            />
+          <Box padding="xl" alignItems="center" justifyContent="center">
+            <AppIcon name="wallet" size={48} color={colors.secondaryText} />
             <Text
               variant="body"
               color="secondaryText"
@@ -230,11 +210,7 @@ const BalanceAdjustmentScreen = () => {
       >
         <Box paddingBottom="m">
           {selectedWallet && (
-            <Box
-              paddingHorizontal="m"
-              paddingBottom="s"
-              alignItems="center"
-            >
+            <Box paddingHorizontal="m" paddingBottom="s" alignItems="center">
               <Text variant="caption" color="secondaryText">
                 {t('finance.new_balance_for')}
               </Text>

@@ -1,4 +1,3 @@
-import { TransactionType } from '@/services/transaction/transaction.type';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import {
   CompositeScreenProps,
@@ -6,9 +5,7 @@ import {
 } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-/**
- * 1. Định nghĩa các màn hình trong Bottom Tab
- */
+/** Main Tab Param List */
 export type MainTabParamList = {
   Home: undefined; // undefined nghĩa là màn hình này không nhận tham số truyền vào
   Statistics: undefined;
@@ -17,33 +14,22 @@ export type MainTabParamList = {
   Profile: undefined;
 };
 
-/**
- * 2. Định nghĩa các màn hình trong Stack tổng (Root)
- */
+/** Root Stack Param List */
 export type RootStackParamList = {
   Splash: undefined; // Màn hình loading ban đầu
   AuthStack: undefined;
   // MainTab chứa các màn hình Tab, sử dụng NavigatorScreenParams để lồng vào nhau
   MainTab: NavigatorScreenParams<MainTabParamList>;
-  TransactionForm: { transaction?: TransactionType } | undefined;
-  TransactionDetail: { transactionId: string }; // Ví dụ: màn hình cần ID để hiển thị chi tiết
+  TransactionForm: { transactionId?: string } | undefined;
   AddWallet: { type: 'cash' | 'bank' | 'credit' };
   WalletTransfer: undefined;
   BalanceAdjustment: undefined;
   HistoryTransaction: undefined;
-  CategoryDetail: {
-    categoryId: string;
-  };
-  CategoryForm:
-    | {
-        categoryId?: string;
-      }
-    | undefined;
+  CategoryDetail: { categoryId: string };
+  CategoryForm: { categoryId?: string } | undefined;
 };
 
-/**
- * 3. Helper Types (Dành cho việc sử dụng hook useNavigation trong các component)
- */
+/** Helper Types */
 export type RootStackScreenProps<T extends keyof RootStackParamList> =
   NativeStackScreenProps<RootStackParamList, T>;
 
@@ -53,7 +39,7 @@ export type MainTabScreenProps<T extends keyof MainTabParamList> =
     RootStackScreenProps<keyof RootStackParamList>
   >;
 
-// Khai báo global để có thể dùng navigation mà không cần import type liên tục
+/** Global declaration */
 declare global {
   namespace ReactNavigation {
     interface RootParamList extends RootStackParamList {}

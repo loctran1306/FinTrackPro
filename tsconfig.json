@@ -1,6 +1,9 @@
 {
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
+    "experimentalDecorators": true, // Cho phép dùng @decorator
+    "emitDecoratorMetadata": true, // Cho phép TS lưu metadata của decorator
+    "useDefineForClassFields": false, // tránh lỗi undefined của WatermelonDB
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],

@@ -4,73 +4,55 @@ import Screen from '@/components/common/Screen';
 import TransactionItem from '@/screens/Transaction/components/TransactionItem';
 import { formatVND } from '@/helpers/currency.helper';
 import { formatDateGroupLabel } from '@/helpers/time.helper';
-import { transactionService } from '@/services/transaction/transaction.service';
-import { TransactionType } from '@/services/transaction/transaction.type';
 import { useAppSelector } from '@/store/hooks';
 import { RADIUS, SPACING } from '@/theme/constant';
 import { Theme } from '@/theme';
 import { Box, Text } from '@theme/components';
 import { useTheme } from '@shopify/restyle';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScrollView, View } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
 import { addOpacity } from '@/helpers/color.helper';
 import LoadingChildren from '@/components/loading/LoadingChildren';
-import { selectCategoryById } from '@/store/category/category.selector';
 import { CATEGORY_COLORS } from '@/constants/category';
 import { useTranslation } from 'react-i18next';
+import withObservables from '@nozbe/with-observables';
+import { CategoryItem } from '@/services/category/category.type';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { observeTransactionsByCategory } from '@/services/watermelondb/wmTransaction.service';
+import { observeCategoryStatById } from '@/services/watermelondb/func/wmCategoryStats';
+import { TimeState } from '@/store/global/global.slice';
+import Transaction from '@/models/Transaction';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'CategoryDetail'>;
+type Props = {
+  categoryId: string;
+  category: CategoryItem | null;
+  transactions: Transaction[];
+};
 
-const CategoryDetailScreen = ({ route, navigation }: Props) => {
+const CategoryDetail = ({ categoryId, category, transactions = [] }: Props) => {
   const { t } = useTranslation();
-  const {
-    categoryId,
-  } = route.params;
-
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
   const { top: topSafeArea } = useSafeAreaInsets();
-  const { session } = useAppSelector(state => state.auth);
-  const [transactions, setTransactions] = useState<TransactionType[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const category = useAppSelector(selectCategoryById(categoryId));
-  const { time } = useAppSelector(state => state.global);
-  useEffect(() => {
-    const fetch = async () => {
-      if (!session?.user?.id) return;
-      setLoading(true);
-      try {
-        const data = await transactionService.getTransactionsByCategory(
-          session.user.id,
-          categoryId,
-          time.month,
-          time.year,
-        );
-        setTransactions(data);
-      } catch {
-        setTransactions([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, [session?.user?.id, categoryId, time]);
-
-  const groupedByDate = transactions.reduce<Record<string, TransactionType[]>>(
-    (acc, t) => {
-      const dateStr = t.date ? String(t.date).split('T')[0] : '';
+  const groupedByDate = transactions.reduce<Record<string, Transaction[]>>(
+    (acc, tx) => {
+      const dateStr = tx.date
+        ? new Date(tx.date).toISOString().split('T')[0]
+        : '';
       if (!dateStr) return acc;
       if (!acc[dateStr]) acc[dateStr] = [];
-      acc[dateStr].push(t);
+      acc[dateStr].push(tx);
       return acc;
     },
     {},
   );
-  const sortedDates = Object.keys(groupedByDate).sort((a, b) =>
-    new Date(b).getTime() - new Date(a).getTime()
+  const sortedDates = Object.keys(groupedByDate).sort(
+    (a, b) => new Date(b).getTime() - new Date(a).getTime(),
   );
 
   return (
@@ -101,20 +83,23 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
         <AppButton
           onPress={() =>
             navigation.navigate('CategoryForm', {
-              categoryId: category?.id ?? '',
+              categoryId,
             })
           }
           style={{ padding: SPACING.s }}
           shadow={false}
         >
-          <AppIcon name='edit' size={18} color={colors.text} />
+          <AppIcon name="edit" size={18} color={colors.text} />
         </AppButton>
       </Box>
 
       {/* Content */}
       <ScrollView
         style={{ flex: 1, backgroundColor: colors.main }}
-        contentContainerStyle={{ paddingHorizontal: SPACING.m, paddingBottom: SPACING.xl }}
+        contentContainerStyle={{
+          paddingHorizontal: SPACING.m,
+          paddingBottom: SPACING.xl,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* Summary card */}
@@ -137,7 +122,10 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
               width: 128,
               height: 128,
               borderRadius: 64,
-              backgroundColor: addOpacity(category?.color ?? CATEGORY_COLORS[0], 0.1),
+              backgroundColor: addOpacity(
+                category?.color ?? CATEGORY_COLORS[0],
+                0.1,
+              ),
               marginRight: -40,
               marginTop: -40,
             }}
@@ -149,7 +137,12 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
               borderRadius={RADIUS.l}
               alignItems="center"
               justifyContent="center"
-              style={{ backgroundColor: addOpacity(category?.color ?? CATEGORY_COLORS[0], 0.3) }}
+              style={{
+                backgroundColor: addOpacity(
+                  category?.color ?? CATEGORY_COLORS[0],
+                  0.3,
+                ),
+              }}
             >
               <AppIcon
                 name={category?.icon as any}
@@ -166,7 +159,11 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
           </Box>
 
           <Box marginBottom="m">
-            <Box flexDirection="row" justifyContent="space-between" marginBottom="xs">
+            <Box
+              flexDirection="row"
+              justifyContent="space-between"
+              marginBottom="xs"
+            >
               <Text variant="caption" color="secondaryText">
                 {t('finance.budget_limit')}
               </Text>
@@ -206,9 +203,15 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
               padding="m"
               borderRadius={RADIUS.m}
               style={{
-                backgroundColor: addOpacity(category?.color ?? CATEGORY_COLORS[0], 0.1),
+                backgroundColor: addOpacity(
+                  category?.color ?? CATEGORY_COLORS[0],
+                  0.1,
+                ),
                 borderWidth: 1,
-                borderColor: addOpacity(category?.color ?? CATEGORY_COLORS[0], 0.2),
+                borderColor: addOpacity(
+                  category?.color ?? CATEGORY_COLORS[0],
+                  0.2,
+                ),
               }}
             >
               <AppIcon name="circle-info" size={16} color={colors.primary} />
@@ -219,11 +222,13 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
           ) : null}
         </Box>
 
-        {loading ? (
+        {!category ? (
           <LoadingChildren />
         ) : sortedDates.length === 0 ? (
           <Box padding="l" alignItems="center">
-            <Text variant="body" color="secondaryText">{t('finance.no_transaction')}</Text>
+            <Text variant="body" color="secondaryText">
+              {t('finance.no_transaction')}
+            </Text>
           </Box>
         ) : (
           <Box gap="m" paddingBottom="xl">
@@ -242,8 +247,8 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
                     {label}
                   </Text>
                   <Box gap="s">
-                    {items.map(t => (
-                      <TransactionItem key={t.id} transaction={t} />
+                    {items.map(tx => (
+                      <TransactionItem key={tx.id} transaction={tx} />
                     ))}
                   </Box>
                 </Box>
@@ -256,4 +261,25 @@ const CategoryDetailScreen = ({ route, navigation }: Props) => {
   );
 };
 
-export default CategoryDetailScreen;
+const enhance = withObservables(
+  ['categoryId', 'time'],
+  ({ categoryId, time }: { categoryId: string; time: TimeState }) => ({
+    category: observeCategoryStatById(categoryId, time.month, time.year),
+    transactions: observeTransactionsByCategory(
+      categoryId,
+      time.month,
+      time.year,
+    ),
+  }),
+);
+
+const EnhancedCategoryDetailScreen = enhance(CategoryDetail);
+
+export default function CategoryDetailScreen() {
+  const categoryId =
+    useRoute<RouteProp<RootStackParamList, 'CategoryDetail'>>().params
+      ?.categoryId;
+  const { time } = useAppSelector(state => state.global);
+  if (!categoryId) return null;
+  return <EnhancedCategoryDetailScreen categoryId={categoryId} time={time} />;
+}

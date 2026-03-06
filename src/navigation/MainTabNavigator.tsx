@@ -4,7 +4,7 @@ import { Box, Text } from '@/theme/components';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { HomeScreen } from '@screens/Home/Home';
 import { ProfileScreen } from '@screens/Profile/Profile';
-import { StatisticsScreen } from '@screens/Statistics/Statistics';
+import StatisticsScreen from '@screens/Statistics/Statistics';
 import { WalletScreen } from '@screens/Wallet/Wallet';
 import { useTheme } from '@shopify/restyle';
 import AppIcon from '@/components/common/AppIcon';

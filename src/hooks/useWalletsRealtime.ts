@@ -1,12 +1,9 @@
-import { useEffect, useCallback, useRef } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
 import { supabase } from '@/lib/supabase';
-import { useAppDispatch } from '@/store/hooks';
+import { syncData } from '@/services/sync/syncDataSupabase';
 import { WalletType } from '@/services/wallet/wallet.type';
-import { updateWallet } from '@/store/wallet/wallet.slice';
-import { getFinanceOverviewThunk } from '@/store/wallet/wallet.thunk';
-import { getCategoriesThunk } from '@/store/category/category.thunk';
-import { getTransactionsThunk } from '@/store/transaction/transaction.thunk';
+import { useAppSelector } from '@/store/hooks';
+import { useCallback, useEffect, useRef } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 
 const MAX_RETRY = 3;
 const RETRY_DELAY_MS = 3000;
@@ -16,13 +13,8 @@ const ERROR_STATUSES = ['CLOSED', 'CHANNEL_ERROR', 'TIMED_OUT'];
 const delay = (ms: number) =>
   new Promise<void>(resolve => setTimeout(resolve, ms));
 
-export const useWalletsRealtime = (
-  userId: string | undefined,
-  month: number,
-  year: number,
-) => {
-  console.log('userId', userId);
-  const dispatch = useAppDispatch();
+export const useWalletsRealtime = (userId: string | undefined) => {
+  const { isNetworkConnected } = useAppSelector(state => state.global);
   const channelRef = useRef<any>(null);
   const retryCountRef = useRef(0);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,7 +32,7 @@ export const useWalletsRealtime = (
         if (channelRef.current) {
           try {
             await channelRef.current.unsubscribe();
-          } catch (_) {}
+          } catch {}
           channelRef.current = null;
         }
 
@@ -60,21 +52,11 @@ export const useWalletsRealtime = (
               table: 'wallets',
               filter: `user_id=eq.${userId}`,
             },
-            event => {
-              const { new: newWallet } = event as { new?: Partial<WalletType> };
-              if (newWallet?.id) {
-                dispatch(
-                  updateWallet({
-                    id: newWallet.id,
-                    display_name: newWallet.display_name ?? '',
-                    wallet_type: newWallet.wallet_type ?? 'cash',
-                    current_balance: newWallet.current_balance ?? 0,
-                    credit_limit: newWallet.credit_limit ?? 0,
-                  }),
-                );
-                dispatch(getFinanceOverviewThunk());
-                dispatch(getCategoriesThunk({ month, year }));
-                dispatch(getTransactionsThunk({ userId, page: 1, limit: 10 }));
+            async event => {
+              console.log('event', event);
+              const { new: wallet } = event as { new?: Partial<WalletType> };
+              if (wallet?.id) {
+                await syncData();
               }
             },
           )
@@ -126,10 +108,11 @@ export const useWalletsRealtime = (
     };
 
     doSubscribe();
-  }, [userId, month, year, dispatch]);
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) return;
+    if (!isNetworkConnected) return;
     isMountedRef.current = true;
     retryCountRef.current = 0;
     subscribe();
@@ -157,5 +140,5 @@ export const useWalletsRealtime = (
         channelRef.current = null;
       }
     };
-  }, [subscribe]);
+  }, [subscribe, isNetworkConnected]);
 };

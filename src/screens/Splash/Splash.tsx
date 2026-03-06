@@ -1,18 +1,13 @@
+import AppIcon from '@/components/common/AppIcon';
 import Screen from '@/components/common/Screen';
 import { checkSessionAndToken } from '@/lib/supabase';
+import { useAppDispatch } from '@/store/hooks';
 import { COLORS } from '@/theme';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import AppIcon from '@/components/common/AppIcon';
 import React, { useEffect } from 'react';
 import { StatusBar, StyleSheet, Text, View } from 'react-native';
 import { RootStackParamList } from '../../navigation/types';
-import { useAppDispatch } from '@/store/hooks';
-import {
-  getFinanceOverviewThunk,
-  getWalletsThunk,
-} from '@/store/wallet/wallet.thunk';
-import { getTransactionsThunk } from '@/store/transaction/transaction.thunk';
 
 const SplashScreen = () => {
   const navigation =
@@ -22,25 +17,17 @@ const SplashScreen = () => {
 
   useEffect(() => {
     const initApp = async () => {
-      const { isAuthenticated, session } = await checkSessionAndToken();
-      if (isAuthenticated) {
-        if (session && session.user && session.user.id) {
-          Promise.all([
-            dispatch(getFinanceOverviewThunk()),
-            dispatch(getWalletsThunk(session.user.id)),
-            dispatch(
-              getTransactionsThunk({
-                userId: session.user.id,
-                page: 1,
-                limit: 10,
-              }),
-            ),
-          ]).finally(() => {
-            navigation.replace('MainTab', { screen: 'Home' });
-          });
-        } else {
-          navigation.replace('AuthStack');
-        }
+      const { isAuthenticated, session, isOffline } =
+        await checkSessionAndToken();
+
+      if (isOffline) {
+        console.log('offline');
+        navigation.replace('MainTab', { screen: 'Home' });
+        return;
+      }
+
+      if (isAuthenticated && session?.user?.id) {
+        navigation.replace('MainTab', { screen: 'Home' });
       } else {
         navigation.replace('AuthStack');
       }

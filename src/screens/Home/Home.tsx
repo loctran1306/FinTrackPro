@@ -10,18 +10,15 @@ import AppBottomSheet, {
 import AppBottomSheetInput from '@/components/common/AppBottomSheetInput';
 import AppIcon from '@/components/common/AppIcon';
 import LoadingWithLogo from '@/components/loading/LoadingWithLogo';
+import QuickTransactionBottomSheet, {
+  QuickTransactionBottomSheetRef,
+} from '@/components/modals/QuickTransactionBottomSheet';
 import { WALLET_TYPES } from '@/constants/wallet';
-import { formatVND } from '@/helpers/currency.helper';
 import { RootStackParamList } from '@/navigation/types';
+import { syncData } from '@/services/sync/syncDataSupabase';
 import { getCategoriesThunk } from '@/store/category/category.thunk';
-import { setHiddenCurrency } from '@/store/global/global.slice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { getTransactionsThunk } from '@/store/transaction/transaction.thunk';
-import {
-  createWalletThunk,
-  getFinanceOverviewThunk,
-  getWalletsThunk,
-} from '@/store/wallet/wallet.thunk';
+import { createWalletThunk } from '@/store/wallet/wallet.thunk';
 import { Theme } from '@/theme';
 import { SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
@@ -30,19 +27,16 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
 import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import QuickTransactionBottomSheet, {
-  QuickTransactionBottomSheetRef,
-} from '@/components/modals/QuickTransactionBottomSheet';
+import HomeOverview from './components/HomeOverview';
 import HomeTransaction from './components/HomeTransaction';
 import QuickAction from './components/QuickAction';
 import WalletList from './components/WalletList';
 
 export const HomeScreen = () => {
   const { t } = useTranslation();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
-  const { top: topSafeArea } = useSafeAreaInsets();
   const [selectedWalletType, setSelectedWalletType] = useState<
     keyof typeof WALLET_TYPES | null
   >(null);
@@ -51,22 +45,21 @@ export const HomeScreen = () => {
   const [loading, setLoading] = useState(false);
   const [loadingComplete, setLoadingComplete] = useState(false);
   const dispatch = useAppDispatch();
-  const { hiddenCurrency } = useAppSelector(state => state.global);
-  const { financeOverview } = useAppSelector(state => state.wallet);
   const { session } = useAppSelector(state => state.auth);
-  const { time } = useAppSelector(state => state.global);
+  const { time, isNetworkConnected } = useAppSelector(state => state.global);
 
+  useEffect(() => {
+    if (!isNetworkConnected) return;
+    const startSync = async () => {
+      try {
+        await syncData();
+      } catch (err) {
+        console.log('Đồng bộ thất bại:', err);
+      }
+    };
 
-
-  const getData = async () => {
-    dispatch(getFinanceOverviewThunk());
-    if (session?.user?.id) {
-      dispatch(getWalletsThunk(session.user.id));
-      dispatch(
-        getTransactionsThunk({ userId: session.user.id, page: 1, limit: 10 }),
-      );
-    }
-  };
+    startSync();
+  }, []);
 
   const handleGetCategories = async () => {
     dispatch(getCategoriesThunk({ month: time.month, year: time.year }));
@@ -77,11 +70,8 @@ export const HomeScreen = () => {
   }, [time]);
 
   const handleRefresh = async () => {
-    getData();
-  };
-
-  const handleToggleHiddenCurrency = () => {
-    dispatch(setHiddenCurrency(!hiddenCurrency));
+    if (!isNetworkConnected) return;
+    await syncData();
   };
 
   const handleCreateWallet = (type: keyof typeof WALLET_TYPES) => {
@@ -139,74 +129,18 @@ export const HomeScreen = () => {
         }}
         showsVerticalScrollIndicator={false}
       >
-        <Box
-          paddingHorizontal="m"
-          paddingBottom="l"
-          gap="l"
-          style={{ paddingTop: topSafeArea }}
-        >
-          <Box alignItems="center">
-            <AppButton
-              shadow={false}
-              onPress={handleToggleHiddenCurrency}
-              style={{ padding: SPACING.m }}
-            >
-              <Box flexDirection="row" alignItems="center" gap="s">
-                <Text
-                  variant="caption"
-                  color="text"
-                  textTransform="uppercase"
-                  letterSpacing={1}
-                >
-                  {t('finance.total_assets')}
-                </Text>
-                {!hiddenCurrency ? (
-                  <AppIcon name="eye" size={16} color={colors.primary} />
-                ) : (
-                  <AppIcon name="eye-slash" size={16} color={colors.primary} />
-                )}
-              </Box>
-            </AppButton>
-            <Text variant="header">
-              {formatVND(financeOverview?.total_assets || 0, hiddenCurrency)}
-            </Text>
-          </Box>
-          <Box
-            flexDirection="row"
-            alignItems="center"
-            justifyContent="space-around"
-          >
-            <Box flex={1} alignItems="center">
-              <Text variant="caption" color="secondaryText">
-                {t('finance.total_income')}
-              </Text>
-              <Text variant="subheader">
-                {formatVND(
-                  financeOverview?.monthly_income || 0,
-                  hiddenCurrency,
-                )}
-              </Text>
-            </Box>
-            <AppIcon
-              name="ellipsis-vertical"
-              size={24}
-              color={colors.secondaryText}
-            />
-            <Box flex={1} alignItems="center">
-              <Text variant="caption" color="secondaryText">
-                {t('finance.tracking')}
-              </Text>
-              <Text variant="subheader">{formatVND(0)}</Text>
-            </Box>
-          </Box>
-        </Box>
+        <HomeOverview />
         <QuickAction
           onCreateWallet={handleCreateWallet}
           onQuickTransaction={() => quickTransactionRef.current?.expand()}
         />
         <WalletList />
         <Box backgroundColor="main" flex={1} gap="s" paddingTop="m">
-          <Box flexDirection="row" justifyContent="space-between" alignItems="center" >
+          <Box
+            flexDirection="row"
+            justifyContent="space-between"
+            alignItems="center"
+          >
             <Text paddingHorizontal="m" variant="subheader">
               {t('finance.history_transaction')}
             </Text>
@@ -214,7 +148,13 @@ export const HomeScreen = () => {
               onPress={() => navigation.navigate('HistoryTransaction')}
               style={{ paddingVertical: 0 }}
             >
-              <Text variant="subheader" textDecorationLine="underline" color="primary">{t('common.view_all')}</Text>
+              <Text
+                variant="subheader"
+                textDecorationLine="underline"
+                color="primary"
+              >
+                {t('common.view_all')}
+              </Text>
             </AppButton>
           </Box>
           <HomeTransaction />
@@ -226,7 +166,8 @@ export const HomeScreen = () => {
         onClose={() => bottomSheetRef.current?.close()}
       >
         <Text variant="header" marginBottom="m">
-          {t('finance.create_wallet')} {selectedWalletType ? WALLET_TYPES[selectedWalletType] : ''}
+          {t('finance.create_wallet')}{' '}
+          {selectedWalletType ? WALLET_TYPES[selectedWalletType] : ''}
         </Text>
         <AppBottomSheetInput
           label={t('finance.wallet_name')}

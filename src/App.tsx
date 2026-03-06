@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import { ThemeProvider } from '@shopify/restyle';
 import React, { useEffect, useMemo, useRef } from 'react';
 import {
@@ -40,15 +41,11 @@ const AppContent = () => {
   const isNetworkConnectedRef = useRef(true);
 
   const themeMode = useAppSelector(state => state.global.theme);
-  const { time } = useAppSelector(state => state.global);
   const { session } = useAppSelector(state => state.auth);
   const dispatch = useAppDispatch();
 
   // Realtime wallets - chạy ở App level để không bị unmount khi navigate (tránh lỗi đăng ký lại)
-  useWalletsRealtime(session?.user?.id,
-    time.month,
-    time.year,
-  );
+  useWalletsRealtime(session?.user?.id);
   // Logic xác định theme nào sẽ được dùng
   const resolvedDarkMode = useMemo(() => {
     if (themeMode === 'system') return systemDarkMode;
@@ -73,12 +70,17 @@ const AppContent = () => {
     ]);
 
     const init = async () => {
-      // Ví dụ: Kiểm tra login từ Supabase hoặc load dữ liệu từ MMKV tại đây
       console.log('Khởi tạo App FinTrack Pro...');
       await scheduleDailyReminder();
       await requestUserPermission();
-      const { isAuthenticated, session } = await checkSessionAndToken();
-      if (isAuthenticated) {
+      const { isAuthenticated, session, isOffline } =
+        await checkSessionAndToken();
+
+      if (isOffline) {
+        // Offline khi khởi động → giữ session cũ (nếu có trong AsyncStorage)
+        console.log('📴 Khởi động offline — giữ session cũ');
+        // Không dispatch clearSession → user vẫn thấy app
+      } else if (isAuthenticated) {
         dispatch(setSession(session));
       } else {
         dispatch(clearSession());
@@ -90,7 +92,6 @@ const AppContent = () => {
       }
     };
 
-
     init().finally(async () => {
       await RNBootSplash.hide({ fade: true });
     });
@@ -100,10 +101,19 @@ const AppContent = () => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
         console.log('nextAppState', nextAppState);
-        const { isAuthenticated, session } = await checkSessionAndToken();
+        const { isAuthenticated, session, isOffline } =
+          await checkSessionAndToken();
+
+        if (isOffline) {
+          // Offline: giữ nguyên session hiện tại, không logout
+          console.log('📴 App foreground nhưng offline — giữ session');
+          return;
+        }
+
         if (!isAuthenticated) {
-          // Nếu session hết hạn,điều hướng ra màn hình Login
           console.log('Session hết hạn, yêu cầu đăng nhập lại');
+          dispatch(clearSession());
+          navigationRef.navigate('AuthStack');
         } else {
           dispatch(setSession(session));
         }
@@ -120,14 +130,15 @@ const AppContent = () => {
     };
   }, [dispatch]);
 
-
   /**
    * Theo dõi trạng thái mạng
+   * Khi offline → giữ session, cho phép dùng WatermelonDB
+   * Khi online trở lại → refresh session + sync data
    */
   useEffect(() => {
     NetInfo.fetch().then((state: NetInfoState) => {
       isNetworkConnectedRef.current = state.isConnected ?? false;
-      dispatch(setNetworkStatus({ isConnected: state.isConnected ?? true }));
+      dispatch(setNetworkStatus({ isConnected: state.isConnected ?? false }));
     });
 
     const unsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
@@ -137,13 +148,43 @@ const AppContent = () => {
       isNetworkConnectedRef.current = isConnected;
 
       if (wasConnected && !isConnected) {
+        // Mất mạng
+        console.log('📴 Mất kết nối mạng — chuyển sang offline mode');
         dispatch(setNetworkStatus({ isConnected: false }));
       }
 
       if (!wasConnected && isConnected) {
-        dispatch(setNetworkStatus({ isConnected: true }));
-        // Có thể gọi refresh thunk khi kết nối trở lại (nếu cần)
-        // if (userId) { dispatch(getFinanceOverviewThunk()); }
+        // Có mạng trở lại → refresh session + sync
+        console.log('🌐 Có mạng trở lại — refresh session + sync');
+        dispatch(setNetworkStatus({ isConnected: true })); // ← Fix: was false
+
+        // Auto refresh session + sync WatermelonDB
+        (async () => {
+          try {
+            const {
+              isAuthenticated,
+              session: newSession,
+              isOffline,
+            } = await checkSessionAndToken();
+
+            if (isOffline) return; // Vẫn chưa có mạng thật sự
+
+            if (isAuthenticated && newSession) {
+              dispatch(setSession(newSession));
+              console.log('✅ Session refreshed, bắt đầu sync...');
+              // Sync dữ liệu offline lên server
+              const { syncData } = require('@/services/sync/syncDataSupabase');
+              syncData().catch(console.error);
+            } else {
+              // Session thật sự hết hạn (refresh token cũng expired)
+              console.log('❌ Session expired, yêu cầu đăng nhập lại');
+              dispatch(clearSession());
+              navigationRef.navigate('AuthStack');
+            }
+          } catch (err) {
+            console.error('Lỗi khi refresh session sau reconnect:', err);
+          }
+        })();
       }
     });
 

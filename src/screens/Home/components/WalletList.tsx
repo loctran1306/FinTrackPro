@@ -1,17 +1,23 @@
 import AppButton from '@/components/button/AppButton';
 import { formatVND } from '@/helpers/currency.helper';
+import Wallet from '@/models/Wallet';
+import { observeCreditWallets, observePaymentWallets } from '@/services/watermelondb/wmWallet.service';
 import { useAppSelector } from '@/store/hooks';
-import { selectWallets } from '@/store/wallet/wallet.selector';
 import { Box, Text } from '@/theme/components';
 import { SPACING } from '@/theme/constant';
-import { ScrollView, useWindowDimensions } from 'react-native';
+import withObservables from '@nozbe/with-observables';
 import { useTranslation } from 'react-i18next';
+import { ScrollView, useWindowDimensions } from 'react-native';
 
-const WalletList = () => {
+type Props = {
+  creditWallets: Wallet[];
+  paymentWallets: Wallet[];
+};
+
+const WalletListEnhanced = ({ creditWallets, paymentWallets }: Props) => {
   const { t } = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const { hiddenCurrency } = useAppSelector(state => state.global);
-  const { creditWallets, paymentWallets } = useAppSelector(selectWallets);
   const widthItem = windowWidth / 2 - SPACING.m * 1.5;
 
 
@@ -35,10 +41,10 @@ const WalletList = () => {
             >
               <Box gap="xs">
                 <Text numberOfLines={1} variant="subheader">
-                  {wallet.display_name}
+                  {wallet.displayName}
                 </Text>
                 <Text variant="body">
-                  {formatVND(wallet.current_balance, hiddenCurrency)}
+                  {formatVND(wallet.currentBalance, hiddenCurrency)}
                 </Text>
               </Box>
             </AppButton>
@@ -63,10 +69,10 @@ const WalletList = () => {
             >
               <Box gap="xs">
                 <Text numberOfLines={1} variant="subheader">
-                  {wallet.display_name}
+                  {wallet.displayName}
                 </Text>
                 <Text variant="body">
-                  {formatVND(wallet.current_balance, hiddenCurrency)}
+                  {formatVND(wallet.currentBalance, hiddenCurrency)}
                 </Text>
               </Box>
             </AppButton>
@@ -77,4 +83,15 @@ const WalletList = () => {
   );
 };
 
-export default WalletList;
+const enhance = withObservables(['userId'], ({ userId }: { userId: string }) => ({
+  creditWallets: observeCreditWallets(userId || ''),
+  paymentWallets: observePaymentWallets(userId || ''),
+}));
+
+const EnhancedWalletList = enhance(WalletListEnhanced);
+
+export default function WalletList() {
+  const { session } = useAppSelector(state => state.auth);
+  const userId = session?.user?.id ?? '';
+  return <EnhancedWalletList userId={userId} />;
+}

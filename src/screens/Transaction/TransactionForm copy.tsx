@@ -11,165 +11,115 @@ import CalculatorKeyboard from '@/components/keyboard/CalculatorKeyboard';
 import LoadingWithLogo from '@/components/loading/LoadingWithLogo';
 import DateTimePicker from '@/components/picker/DateTimePicker';
 import { formatVND } from '@/helpers/currency.helper';
-import { database } from '@/models';
-import Category from '@/models/Category';
-import Transaction from '@/models/Transaction';
-import Wallet from '@/models/Wallet';
-import { RootStackParamList } from '@/navigation/types';
-import { observeCategories } from '@/services/watermelondb/wmCategory.service';
-import { observeWallets } from '@/services/watermelondb/wmWallet.service';
-import { useAppSelector } from '@/store/hooks';
+import { RootStackParamList, RootStackScreenProps } from '@/navigation/types';
+import { CategoryItem } from '@/services/category/category.type';
+import {
+  CreateTransactionType
+} from '@/services/transaction/transaction.type';
+import { WalletType } from '@/services/wallet/wallet.type';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {
+  createTransactionThunk,
+  updateTransactionThunk,
+} from '@/store/transaction/transaction.thunk';
+import { selectWallets } from '@/store/wallet/wallet.selector';
 import { Theme } from '@/theme';
 import { Box, Text } from '@/theme/components';
 import { RADIUS, SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
-import withObservables from '@nozbe/with-observables';
-import { of } from 'rxjs';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
-import dayjs from 'dayjs'; // Chuyển sang dayjs đồng bộ với helper
-import React, { useEffect, useRef, useState } from 'react';
+import moment from 'moment';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Keyboard, TouchableOpacity } from 'react-native';
-import {
-  createTransaction,
-  updateTransaction,
-} from '@/services/watermelondb/wmTransaction.service';
 
 type TransactionMode = 'expense' | 'income';
 
-type EnhancedProps = {
-  transaction: Transaction | null;
-  categories: Category[];
-  wallets: Wallet[];
-};
 
-const TransactionFormEnhanced = ({
-  transaction,
-  categories = [],
-  wallets = [],
-}: EnhancedProps) => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+const TransactionForm = ({ route }: RootStackScreenProps<'TransactionForm'>) => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { t } = useTranslation();
   const { colors } = useTheme<Theme>();
+  const transaction = route.params?.transaction;
   const isEdit = !!transaction;
-
   const [type, setType] = useState<TransactionMode>('expense');
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState('');
+  const [amountView, setAmountView] = useState('0');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date());
 
+  // Loading States
   const [loading, setLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
+  // Refs
   const calculatorSheetRef = useRef<AppBottomSheetRef>(null);
   const datePickerSheetRef = useRef<AppBottomSheetRef>(null);
 
-  const [selectedWallet, setSelectedWallet] = useState<any | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
+  // Data States
+  const [selectedWallet, setSelectedWallet] = useState<WalletType | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryItem | null>(
+    null,
+  );
 
+  // Redux
+  const dispatch = useAppDispatch();
   const { session } = useAppSelector(state => state.auth);
+  const { categories } = useAppSelector(state => state.category);
+  const { creditWallets, paymentWallets } = useAppSelector(selectWallets);
+  const allWallets = useMemo(
+    () => [...(paymentWallets || []), ...(creditWallets || [])],
+    [paymentWallets, creditWallets],
+  );
 
-  // Khởi tạo dữ liệu
+  // Initialize data for Edit mode or Defaults
   useEffect(() => {
-    if (isEdit && transaction) {
+    if (
+      isEdit &&
+      transaction &&
+      allWallets.length > 0 &&
+      categories &&
+      !loading
+    ) {
       setType(transaction.type as TransactionMode);
-      setAmount(transaction.amount);
+      setAmount(transaction.amount.toString());
+      setAmountView(formatVND(transaction.amount));
       setNote(transaction.note || '');
-      // WatermelonDB lưu date là timestamp, dùng dayjs xử lý chuẩn xác
-      setDate(dayjs(transaction.date).toDate());
+      setDate(new Date(transaction.date));
 
-      const wallet = wallets.find(w => w.id === transaction.walletId);
+      const wallet = allWallets.find(w => w.id === transaction.wallet_id);
       if (wallet) setSelectedWallet(wallet);
 
-      const category = categories?.find(c => c.id === transaction.categoryId);
+      const category = categories.find(c => c.id === transaction.category_id);
       if (category) setSelectedCategory(category);
     } else {
-      if (!selectedWallet && wallets.length > 0) {
-        const defaultWallet =
-          wallets.find(w => w.walletType === 'cash') || wallets[0];
-        setSelectedWallet(defaultWallet);
+      // Default initialization logic (only if NOT editing)
+      if (!isEdit && allWallets.length > 0 && !selectedWallet) {
+        const defaultWallet = allWallets.find(
+          w => w.wallet_type === 'cash' || w.display_name === 'Tiền mặt',
+        );
+        setSelectedWallet(defaultWallet || allWallets[0]);
       }
-      if (!selectedCategory && categories && categories.length > 0) {
+      if (!isEdit && categories && categories.length > 0 && !selectedCategory) {
         const defaultCategory = categories.find(
           c => c.name === 'Ăn uống' || c.name === 'Eating',
         );
         if (defaultCategory) setSelectedCategory(defaultCategory);
       }
     }
-  }, [wallets.length, categories?.length, isEdit, transaction]);
+  }, [allWallets, categories, isEdit, transaction]); // Depend on data availability
 
   const handleCalculatorDone = (result: number) => {
-    setAmount(result);
+    setAmount(result.toString());
+    setAmountView(formatVND(Number(result)));
     calculatorSheetRef.current?.close();
   };
 
   const handleDateConfirm = (newDate: Date) => {
     setDate(newDate);
     datePickerSheetRef.current?.close();
-  };
-
-  const handleSaveTransaction = async () => {
-    if (!session?.user || !selectedWallet) return;
-
-    try {
-      setLoading(true);
-      const data = {
-        amount: amount,
-        note: note,
-        date: date.getTime(),
-        type: type,
-        walletId: selectedWallet.id,
-        categoryId: type === 'expense' ? selectedCategory?.id : null,
-        userId: session.user.id,
-      };
-      if (isEdit && transaction) {
-        const updatedTransaction = await updateTransaction(transaction, data);
-        if (updatedTransaction) {
-          toast.success(t('finance.edit_transaction_success'));
-        } else {
-          toast.error(t('finance.edit_transaction_error'));
-        }
-      } else {
-        const newTransaction = await createTransaction(data);
-        if (newTransaction) {
-          toast.success(t('finance.add_transaction_success'));
-        } else {
-          toast.error(t('finance.add_transaction_error'));
-        }
-      }
-
-      setIsComplete(true);
-    } catch (error) {
-      console.log('error', error);
-      toast.error(
-        isEdit
-          ? t('finance.edit_transaction_error')
-          : t('finance.add_transaction_error'),
-      );
-      setLoading(false);
-    }
-  };
-
-  const handleGoBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate('MainTab', { screen: 'Home' });
-    }
-  };
-
-  const handleSaveComplete = () => {
-    setLoading(false);
-    setIsComplete(false);
-    toast.success(
-      isEdit
-        ? t('finance.edit_transaction_success')
-        : t('finance.add_transaction_success'),
-    );
-    setTimeout(handleGoBack, 100);
   };
 
   const renderTab = (tabType: TransactionMode, label: string) => {
@@ -196,20 +146,83 @@ const TransactionFormEnhanced = ({
     );
   };
 
+  const resultRef = useRef<any>(null);
+  const handleSaveTransaction = async () => {
+    if (!session || !session.user) return;
+    const newDate = new Date(date).toISOString();
+    const data: CreateTransactionType = {
+      type,
+      amount: Number(amount),
+      note,
+      category_id: type === 'expense' ? selectedCategory?.id || null : null,
+      date: newDate,
+      wallet_id: selectedWallet?.id || '',
+    };
+
+    try {
+      setLoading(true);
+      let result;
+      if (isEdit && transaction) {
+        // dispatch update action
+        result = await dispatch(
+          updateTransactionThunk({ id: transaction.id, data }),
+        ).unwrap();
+      } else {
+        result = await dispatch(createTransactionThunk({ data })).unwrap();
+      }
+      resultRef.current = result;
+      setIsComplete(true);
+    } catch (error) {
+      console.log('error', error);
+      toast.error(
+        isEdit ? 'Cập nhật giao dịch thất bại' : 'Thêm giao dịch thất bại',
+      );
+    } finally {
+      setIsComplete(true);
+    }
+  };
+
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainTab', { screen: 'Home' });
+    }
+  };
+
+  const handleSaveComplete = () => {
+    setIsComplete(false);
+    setLoading(false);
+    if (resultRef.current) {
+      toast.success(
+        isEdit
+          ? t('finance.edit_transaction_success')
+          : t('finance.add_transaction_success'),
+      );
+      setTimeout(() => handleGoBack(), 100);
+    } else {
+      toast.error(
+        isEdit
+          ? t('finance.edit_transaction_error')
+          : t('finance.add_transaction_error'),
+      );
+    }
+  };
+
   return (
     <Screen padding="none" backgroundColor="main">
       <AppHeader
-        title={
-          isEdit ? t('finance.edit_transaction') : t('finance.add_transaction')
-        }
+        title={isEdit ? t('finance.edit_transaction') : t('finance.add_transaction')}
         backButton={handleGoBack}
       />
-      <AppScrollView>
+      <AppScrollView onRefresh={async () => { }}>
+        {/* Tabs */}
         <Box flexDirection="row" padding="m" gap="m">
           {renderTab('expense', t('finance.expense'))}
           {renderTab('income', t('finance.income'))}
         </Box>
 
+        {/* Amount Input */}
         <Box alignItems="center" justifyContent="center" paddingVertical="m">
           <TouchableOpacity
             onPress={() => {
@@ -226,7 +239,7 @@ const TransactionFormEnhanced = ({
               fontSize={40}
               color={type === 'expense' ? 'danger' : 'success'}
             >
-              {formatVND(Number(amount))}
+              {amountView}
             </Text>
           </TouchableOpacity>
           <AppInput
@@ -239,7 +252,9 @@ const TransactionFormEnhanced = ({
           />
         </Box>
 
+        {/* Form Fields */}
         <Box paddingHorizontal="m" gap="m">
+          {/* Date Picker Row - Horizontal */}
           <Box flexDirection="row" alignItems="center" justifyContent="center">
             <AppButton
               style={{
@@ -265,11 +280,12 @@ const TransactionFormEnhanced = ({
                 />
               </Box>
               <Text variant="caption" fontFamily="semiBold">
-                {dayjs(date).format('DD/MM/YYYY - HH:mm')}
+                {moment(date).format('DD/MM/YYYY - HH:mm')}
               </Text>
             </AppButton>
           </Box>
 
+          {/* Category Selection */}
           {type === 'expense' && (
             <Box gap="s">
               <Text variant="body" color="secondaryText">
@@ -323,17 +339,19 @@ const TransactionFormEnhanced = ({
             </Box>
           )}
 
+          {/* Wallet Selection */}
           <Box gap="s">
             <Text variant="body" color="secondaryText">
               {t('finance.wallet')}
             </Text>
             <Box flexDirection="row" flexWrap="wrap" gap="s">
-              {wallets.map(wallet => {
+              {allWallets.map(wallet => {
                 const isSelected = selectedWallet?.id === wallet.id;
                 let iconName = 'wallet';
-                if (wallet.walletType === 'cash') iconName = 'money-bill';
-                if (wallet.walletType === 'bank') iconName = 'building-columns';
-                if (wallet.walletType === 'credit') iconName = 'credit-card';
+                if (wallet.wallet_type === 'cash') iconName = 'money-bill';
+                if (wallet.wallet_type === 'bank')
+                  iconName = 'building-columns';
+                if (wallet.wallet_type === 'credit') iconName = 'credit-card';
 
                 return (
                   <TouchableOpacity
@@ -372,7 +390,7 @@ const TransactionFormEnhanced = ({
                         fontFamily="semiBold"
                         color={isSelected ? 'white' : 'text'}
                       >
-                        {wallet.displayName}
+                        {wallet.display_name}
                       </Text>
                     </Box>
                   </TouchableOpacity>
@@ -391,19 +409,14 @@ const TransactionFormEnhanced = ({
           ) : (
             <AppButton
               disabled={
-                amount <= 0 ||
+                !amount ||
                 !selectedWallet ||
                 (type === 'expense' && !selectedCategory)
               }
               onPress={handleSaveTransaction}
               backgroundColor={type === 'expense' ? 'danger' : 'success'}
             >
-              <Text
-                textAlign="center"
-                variant="subheader"
-                color="white"
-                textTransform="uppercase"
-              >
+              <Text textAlign="center" variant="subheader" color="white" textTransform="uppercase">
                 {t('finance.save_transaction')}
               </Text>
             </AppButton>
@@ -411,6 +424,7 @@ const TransactionFormEnhanced = ({
         </Box>
       </AppScrollView>
 
+      {/* Calculator Modal */}
       <AppBottomSheet
         hideIndicator
         ref={calculatorSheetRef}
@@ -425,6 +439,7 @@ const TransactionFormEnhanced = ({
         />
       </AppBottomSheet>
 
+      {/* Date Picker Modal */}
       <AppBottomSheet
         hideIndicator
         ref={datePickerSheetRef}
@@ -437,29 +452,4 @@ const TransactionFormEnhanced = ({
   );
 };
 
-const enhance = withObservables(
-  ['transactionId', 'userId'],
-  ({ transactionId, userId }: { transactionId?: string; userId: string }) => ({
-    transaction: transactionId
-      ? database.collections
-          .get<Transaction>('transactions')
-          .findAndObserve(transactionId)
-      : of(null),
-    categories: observeCategories(userId),
-    wallets: observeWallets(userId),
-  }),
-);
-
-const EnhancedTransactionForm = enhance(TransactionFormEnhanced);
-
-export default function TransactionForm() {
-  const { session } = useAppSelector(state => state.auth);
-  const { transactionId } =
-    useRoute<RouteProp<RootStackParamList, 'TransactionForm'>>().params ?? {};
-  return (
-    <EnhancedTransactionForm
-      transactionId={transactionId}
-      userId={session?.user?.id ?? ''}
-    />
-  );
-}
+export default TransactionForm;

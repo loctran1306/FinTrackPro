@@ -1,4 +1,3 @@
-import AppButton from '@/components/button/AppButton';
 import AppIcon from '@/components/common/AppIcon';
 import SpeedDialWrapper from '@/components/common/SpeedDialWrapper';
 import { WALLET_TYPES } from '@/constants/wallet';

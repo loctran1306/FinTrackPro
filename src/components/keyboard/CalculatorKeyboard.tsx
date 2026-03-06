@@ -13,18 +13,20 @@ const { width } = Dimensions.get('window');
 
 // Định nghĩa kiểu dữ liệu cho Props
 interface CalculatorKeyboardProps {
-  onValueChange?: (value: string) => void;
+  onValueChange?: (result: number) => void;
   onDone: (result: number) => void;
-  initialValue?: string;
+  initialValue?: number;
 }
 
 const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
   onValueChange,
   onDone,
-  initialValue = '',
+  initialValue = 0,
 }) => {
   const { colors } = useTheme<Theme>();
-  const [expr, setExpr] = useState<string>(initialValue);
+  const [expr, setExpr] = useState<string>(
+    initialValue ? initialValue.toString() : '',
+  );
 
   const buttons: string[] = [
     '7',
@@ -34,20 +36,35 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
     '4',
     '5',
     '6',
-    '/', // Thêm Chia
+    '+',
     '1',
     '2',
     '3',
-    '*', // Thêm Nhân
+    '-', // Thêm Nhân
     '.',
     '0',
-    '-',
-    '+', // Dời Trừ và Cộng xuống đây
+    '*',
+    '/', // Dời Trừ và Cộng xuống đây
     'C',
     '',
     '=',
     'OK', // Thêm nút C (Clear) để xóa sạch nếu gõ sai quá nhiều
   ];
+
+  // Tính kết quả real-time và gọi onValueChange
+  const emitResult = (expression: string) => {
+    if (!onValueChange) return;
+    if (!expression) {
+      onValueChange(0);
+      return;
+    }
+    try {
+      const result = evaluate(expression);
+      onValueChange(Number(result));
+    } catch {
+      // Biểu thức chưa hợp lệ (đang gõ dở) → giữ nguyên giá trị cũ
+    }
+  };
 
   const handlePress = (btn: string): void => {
     let newExpr = expr;
@@ -60,7 +77,6 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
       try {
         // mathjs sẽ tự hiểu dấu * và /
         const result = evaluate(expr || '0');
-        // Sau đó Lộc dùng toDbAmount(Number(result)) để lưu 100 thay vì 100,000
         onDone(Number(result));
         return;
       } catch (error) {
@@ -88,9 +104,7 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
     }
 
     setExpr(newExpr);
-    if (onValueChange) {
-      onValueChange(newExpr);
-    }
+    emitResult(newExpr);
   };
 
   // Hàm format số chuẩn Việt Nam (1.000.000)
@@ -107,7 +121,7 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
       entering={SlideInDown.duration(300)}
       exiting={SlideOutDown.duration(300)}
     >
-      <Box backgroundColor='main' gap="s">
+      <Box backgroundColor="main" gap="s">
         <Box paddingHorizontal="m">
           <Text fontSize={24} textAlign="center" color="primary">
             {formatDisplay(expr) || '0'}
@@ -120,7 +134,7 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
           flexWrap="wrap"
           justifyContent="center"
           alignItems="center"
-          gap='xs'
+          gap="xs"
         >
           {buttons.map(btn => {
             const isOperator = ['+', '-', '*', '/', '=', 'DEL', 'C'].includes(
@@ -130,6 +144,7 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
 
             return (
               <AppButton
+                haptic="selection"
                 shadow={true}
                 key={btn}
                 onPress={() => handlePress(btn)}
@@ -141,16 +156,13 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
                   backgroundColor: isOperator
                     ? colors.highlight
                     : isOK
-                      ? colors.primary
-                      : colors.main,
+                    ? colors.primary
+                    : colors.main,
                   borderRadius: RADIUS.m,
                   padding: 0,
                 }}
               >
-                <Text
-                  color={isOK ? 'white' : 'text'}
-                  fontSize={20}
-                >
+                <Text color={isOK ? 'white' : 'text'} fontSize={20}>
                   {btn === '*' ? 'x' : btn}
                 </Text>
               </AppButton>

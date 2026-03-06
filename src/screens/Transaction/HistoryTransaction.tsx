@@ -1,65 +1,84 @@
+import withObservables from "@nozbe/with-observables";
+import Transaction from "@/models/Transaction";
 import AppHeader from "@/components/common/AppHeader";
 import Screen from "@/components/common/Screen";
-import { useMemo, useRef, useCallback } from "react";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { useCallback, useMemo, useState } from "react";
 import { Box } from "@/theme/components";
 import { SPACING } from "@/theme/constant";
 import TransactionItem from "./components/TransactionItem";
-import { getTransactionsThunk } from "@/store/transaction/transaction.thunk";
-import LoadingChildren from "@/components/loading/LoadingChildren";
 import { useTranslation } from "react-i18next";
-import { FlatList } from "react-native-gesture-handler";
+import { FlashList } from "@shopify/flash-list";
+import { observeTransactionCount, observeTransactions } from "@/services/watermelondb/wmTransaction.service";
+import LoadingChildren from "@/components/loading/LoadingChildren";
+import { useAppSelector } from "@/store/hooks";
 
-const HistoryTransactionScreen = () => {
+const INITIAL_TAKE = 50;
+const LOAD_MORE_COUNT = 50;
+
+interface Props {
+  transactions: Transaction[];
+  transactionCount: number;
+  onLoadMore: () => void;
+}
+
+const HistoryTransactionScreen = ({
+  transactions,
+  transactionCount = 0,
+  onLoadMore,
+}: Props) => {
   const { t } = useTranslation();
-  const flatListRef = useRef<FlatList<any>>(null);
-  const dispatch = useAppDispatch();
-  const { session } = useAppSelector(state => state.auth);
-  const { transactions: transactionList, page, limit, total, loading } =
-    useAppSelector(state => state.transaction);
 
-  const data = useMemo(
-    () => [...(transactionList ?? [])],
-    [transactionList]
-  );
-
-  const handleLoadMore = () => {
-    if (!session?.user?.id || loading) return;
-    if (page * limit >= total) return;
-    dispatch(
-      getTransactionsThunk({ userId: session.user.id, page: page + 1, limit })
-    );
-  };
-
-  const renderItem = useCallback(({ item }: { item: any }) => (
-    <TransactionItem
-      transaction={item}
-    />
+  const renderItem = useCallback(({ item }: { item: Transaction }) => (
+    <TransactionItem transaction={item} />
   ), []);
+
+  const ItemSeparator = useMemo(() => () => <Box height={SPACING.s} />, []);
+
+  const hasMore = transactionCount > transactions.length;
+  const handleEndReached = useCallback(() => {
+    if (!hasMore) return;
+    onLoadMore();
+  }, [hasMore, onLoadMore]);
 
   return (
     <Screen>
       <AppHeader title={t('finance.history_transaction')} />
-      <FlatList
-        ref={flatListRef}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: SPACING.l }}
-        data={data}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => `${item.id}-${index}`}
-        ItemSeparatorComponent={() => <Box height={SPACING.s} />}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        removeClippedSubviews={true}
-        windowSize={5}
-        maxToRenderPerBatch={10}
-        initialNumToRender={10}
-        ListFooterComponent={
-          loading ? <LoadingChildren /> : null
-        }
-      />
+      <Box flex={1}>
+        <FlashList
+          data={transactions}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          extraData={transactions.length}
+          ItemSeparatorComponent={ItemSeparator}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={hasMore ? <LoadingChildren /> : null}
+        />
+      </Box>
     </Screen>
   );
 };
 
-export default HistoryTransactionScreen;
+const enhance = withObservables(['userId', 'takeCount'], ({ userId, takeCount }: { userId: string; takeCount: number }) => ({
+  transactions: observeTransactions(userId || '', takeCount),
+  transactionCount: observeTransactionCount(userId || ''),
+}));
+
+const EnhancedHistoryTransaction = enhance(HistoryTransactionScreen);
+
+export default function HistoryTransaction() {
+  const { session } = useAppSelector(state => state.auth);
+  const [takeCount, setTakeCount] = useState(INITIAL_TAKE);
+  const onLoadMore = useCallback(
+    () => setTakeCount((c) => c + LOAD_MORE_COUNT),
+    [],
+  );
+
+  return (
+    <EnhancedHistoryTransaction
+      userId={session?.user?.id ?? ''}
+      takeCount={takeCount}
+      onLoadMore={onLoadMore}
+    />
+  );
+}

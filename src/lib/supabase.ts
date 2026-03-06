@@ -20,7 +20,11 @@ export const supabase = createClient(
   },
 );
 
-export const checkSessionAndToken = async () => {
+export const checkSessionAndToken = async (): Promise<{
+  isAuthenticated: boolean;
+  session: any;
+  isOffline?: boolean;
+}> => {
   try {
     // 1. Kiểm tra session hiện tại từ Supabase
     const {
@@ -28,22 +32,43 @@ export const checkSessionAndToken = async () => {
       error,
     } = await supabase.auth.getSession();
 
-    if (error) throw error;
+    if (error) {
+      // Phân biệt: lỗi network vs session thật sự hết hạn
+      const isNetworkError =
+        error.message?.includes('Network') ||
+        error.message?.includes('fetch') ||
+        error.message?.includes('Failed to fetch') ||
+        error.message?.includes('network');
+
+      if (isNetworkError) {
+        console.log('⚡ Offline');
+        return { isAuthenticated: true, session: null, isOffline: true };
+      }
+
+      throw error;
+    }
 
     if (session) {
-      console.log('Session vẫn còn hiệu lực cho:', session.user.email);
-      // Cập nhật FCM Token
       if (Platform.OS === 'android') {
         if (session.user.id && session.user.id !== '') {
           await deviceService.updateDeviceToken(session.user.id);
         }
       }
-
       return { isAuthenticated: true, session: session };
     }
 
     return { isAuthenticated: false, session: null };
-  } catch (err) {
+  } catch (err: any) {
+    const isNetworkError =
+      err?.message?.includes('Network') ||
+      err?.message?.includes('fetch') ||
+      err?.name === 'TypeError';
+
+    if (isNetworkError) {
+      console.log('⚡ Offline');
+      return { isAuthenticated: true, session: null, isOffline: true };
+    }
+
     console.error('Lỗi khi kiểm tra session:', err);
     return { isAuthenticated: false, session: null };
   }

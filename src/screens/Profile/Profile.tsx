@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { Pressable } from 'react-native';
-import { Box, Text } from '@theme/components';
-import Screen from '@/components/common/Screen';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setTheme, ThemeMode } from '@/store/global/global.slice';
+import {
+  setSyncEnabled,
+  setTheme,
+  ThemeMode,
+} from '@/store/global/global.slice';
 import { useTheme } from '@shopify/restyle';
 import { Theme } from '@/theme';
 import AppIcon from '@/components/common/AppIcon';
@@ -17,16 +16,38 @@ import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { KEY_LOCALE_STORAGE } from '@/constants/locale.const';
 import AppButton from '@/components/button/AppButton';
+import React, { useState } from 'react';
+import { Pressable, Switch } from 'react-native';
+import { Box, Text } from '@/theme/components';
+import Screen from '@/components/common/Screen';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { RADIUS } from '@/theme/constant';
+import { syncData } from '@/services/sync/syncDataSupabase';
+
 export const ProfileScreen = () => {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
   const dispatch = useAppDispatch();
-  const themeMode = useAppSelector(state => state.global.theme);
+  const { theme: themeMode, isSyncEnabled } = useAppSelector(
+    state => state.global,
+  );
+
   const handleThemeChange = (mode: ThemeMode) => {
     dispatch(setTheme(mode));
   };
+
+  const handleToggleSync = async (value: boolean) => {
+    dispatch(setSyncEnabled(value));
+    toast.info(`Sync đã ${value ? 'Bật' : 'Tắt'}`);
+    if (value) {
+      toast.info('Đang đồng bộ dữ liệu...');
+      await syncData();
+    }
+  };
+
+  const [budgetAlert, setBudgetAlert] = useState(true);
 
   const handleLogout = async () => {
     const { success, message } = await signOut();
@@ -40,7 +61,7 @@ export const ProfileScreen = () => {
   };
 
   const switchLanguage = (code: 'vi' | 'en') => {
-    i18n.changeLanguage(code);      // Thay đổi giao diện lập tức
+    i18n.changeLanguage(code); // Thay đổi giao diện lập tức
     AsyncStorage.setItem(KEY_LOCALE_STORAGE, code); // Lưu lại cho lần sau
   };
 
@@ -85,8 +106,8 @@ export const ProfileScreen = () => {
                     {mode === 'system'
                       ? 'Hệ thống'
                       : mode === 'light'
-                        ? 'Sáng'
-                        : 'Tối'}
+                      ? 'Sáng'
+                      : 'Tối'}
                   </Text>
                 </Box>
               </Pressable>
@@ -97,15 +118,59 @@ export const ProfileScreen = () => {
       <Box marginTop="m">
         <Text variant="body">Ngôn ngữ</Text>
         <Box flexDirection="row" marginTop="s" gap="s">
-          <AppButton backgroundColor={i18n.language === 'vi' ? 'primary' : 'card'} onPress={() => switchLanguage('vi')}>
-            <Text variant="body" color={i18n.language === 'vi' ? 'main' : 'text'}>Tiếng Việt</Text>
+          <AppButton
+            backgroundColor={i18n.language === 'vi' ? 'primary' : 'card'}
+            onPress={() => switchLanguage('vi')}
+          >
+            <Text
+              variant="body"
+              color={i18n.language === 'vi' ? 'main' : 'text'}
+            >
+              Tiếng Việt
+            </Text>
           </AppButton>
-          <AppButton backgroundColor={i18n.language === 'en' ? 'primary' : 'card'} onPress={() => switchLanguage('en')}>
-            <Text variant="body" color={i18n.language === 'en' ? 'main' : 'text'}>English</Text>
+          <AppButton
+            backgroundColor={i18n.language === 'en' ? 'primary' : 'card'}
+            onPress={() => switchLanguage('en')}
+          >
+            <Text
+              variant="body"
+              color={i18n.language === 'en' ? 'main' : 'text'}
+            >
+              English
+            </Text>
           </AppButton>
         </Box>
       </Box>
 
+      <Box marginTop="m">
+        <Text variant="body">Hệ thống (Testing)</Text>
+        <Box
+          flexDirection="row"
+          alignItems="center"
+          justifyContent="space-between"
+          padding="m"
+          borderRadius={RADIUS.xl}
+          backgroundColor="card"
+          marginTop="s"
+        >
+          <Box flexDirection="row" alignItems="center" gap="m">
+            <AppIcon name="cloud" size={20} color={colors.primary} />
+            <Box>
+              <Text variant="body">Đồng bộ Supabase</Text>
+              <Text variant="caption" color="secondaryText">
+                Tắt để test Offline mode
+              </Text>
+            </Box>
+          </Box>
+          <Switch
+            value={isSyncEnabled}
+            onValueChange={handleToggleSync}
+            trackColor={{ false: colors.card, true: colors.primary }}
+            thumbColor={colors.white}
+          />
+        </Box>
+      </Box>
 
       <Box marginTop="m">
         <Text variant="body">Cài đặt</Text>
@@ -115,11 +180,27 @@ export const ProfileScreen = () => {
             Cập nhật hồ sơ
           </Text>
         </Box>
-        <Box backgroundColor="card" padding="m" borderRadius={14} marginTop="s">
-          <Text variant="body">Thông báo</Text>
-          <Text variant="body" color="secondaryText">
-            Quản lý nhắc nhở
-          </Text>
+        <Box
+          flexDirection="row"
+          alignItems="center"
+          justifyContent="space-between"
+          padding="m"
+          borderRadius={14}
+          backgroundColor="card"
+          marginTop="s"
+        >
+          <Box>
+            <Text variant="body">Thông báo</Text>
+            <Text variant="body" color="secondaryText">
+              Cảnh báo ngân sách
+            </Text>
+          </Box>
+          <Switch
+            value={budgetAlert}
+            onValueChange={setBudgetAlert}
+            trackColor={{ false: colors.card, true: colors.primary }}
+            thumbColor={colors.white}
+          />
         </Box>
         <Box backgroundColor="card" padding="m" borderRadius={14} marginTop="s">
           <Text variant="body">Bảo mật</Text>

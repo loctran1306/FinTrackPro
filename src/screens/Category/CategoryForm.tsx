@@ -3,6 +3,7 @@ import AppIcon from '@/components/common/AppIcon';
 import AppInput from '@/components/common/AppInput';
 import AppScrollView from '@/components/common/AppScrollView';
 import Screen from '@/components/common/Screen';
+import LoadingChildren from '@/components/loading/LoadingChildren';
 import IconPickerBottomSheet, {
   IconPickerBottomSheetRef,
 } from '@/components/modals/IconPickerBottomSheet';
@@ -13,20 +14,20 @@ import {
   formatVNDInput,
   parseVNDInput,
 } from '@/helpers/currency.helper';
+import { navigateToMain } from '@/navigation/navigationRef';
 import { RootStackParamList } from '@/navigation/types';
-import categoryService from '@/services/category/category.service';
-import { selectCategoryById } from '@/store/category/category.selector';
-import { getCategoriesThunk } from '@/store/category/category.thunk';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import * as wmCategory from '@/services/watermelondb/wmCategory.service';
+import { useAppSelector } from '@/store/hooks';
 import { Theme } from '@/theme';
 import { RADIUS, SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
-import { CommonActions } from '@react-navigation/native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
 import { Box, Text } from '@theme/components';
 import { useFormik } from 'formik';
 import React, { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   ScrollView,
@@ -35,29 +36,29 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Yup from 'yup';
-import { useTranslation } from 'react-i18next';
-import { navigateToMain } from '@/navigation/navigationRef';
+import withObservables from '@nozbe/with-observables';
+import { database } from '@/models';
+import Category from '@/models/Category';
+import { of } from 'rxjs';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'CategoryForm'>;
+type FormProps = {
+  categoryId?: string;
+  category: Category | null;
+  navigation: NativeStackScreenProps<RootStackParamList, 'CategoryForm'>['navigation'];
+};
 
-const CategoryFormScreen = ({ route, navigation }: Props) => {
+const CategoryFormInner = ({ categoryId, category, navigation }: FormProps) => {
   const { t } = useTranslation();
-  const { categoryId } = route.params ?? {};
-
   const isEdit = !!categoryId;
+  const isLoading = isEdit && !category;
 
   const { colors } = useTheme<Theme>();
   const { top: topSafeArea, bottom: bottomSafeArea } = useSafeAreaInsets();
 
   const [budgetAlert, setBudgetAlert] = useState(false);
 
-  const dispatch = useAppDispatch();
   const { session } = useAppSelector(state => state.auth);
   const iconPickerRef = useRef<IconPickerBottomSheetRef>(null);
-  const category = useAppSelector(
-    selectCategoryById(categoryId ?? ''),
-  );
-  const { time } = useAppSelector(state => state.global);
 
   const formCategory = useFormik<{
     id: string;
@@ -71,7 +72,7 @@ const CategoryFormScreen = ({ route, navigation }: Props) => {
       name: category?.name ?? '',
       icon: category?.icon ?? 'utensils',
       color: category?.color ?? CATEGORY_COLORS[0],
-      budget_limit: category?.budget_limit ?? 0,
+      budget_limit: Number(category?.limit ?? 0),
     },
     enableReinitialize: true,
     validationSchema: Yup.object().shape({
@@ -89,38 +90,21 @@ const CategoryFormScreen = ({ route, navigation }: Props) => {
       }
       try {
         if (isEdit && category) {
-          const updatedCategory = await categoryService.updateCategory(
-            values.id,
-            {
-              name: values.name,
-              icon: values.icon,
-              color: values.color,
-              limit: values.budget_limit,
-            },
-          );
-          if (!updatedCategory)
-            toast.error(t('finance.update_category_error'));
-          await dispatch(
-            getCategoriesThunk({
-              month: time.month,
-              year: time.year,
-            }),
-          ).unwrap();
-          toast.success(t('finance.update_category_success'));
-        } else {
-          const newCategory = await categoryService.createCategory({
+          await wmCategory.updateCategory(category, {
             name: values.name,
             icon: values.icon,
             color: values.color,
             limit: values.budget_limit,
           });
-          if (!newCategory) toast.error(t('finance.create_category_error'));
-          await dispatch(
-            getCategoriesThunk({
-              month: time.month,
-              year: time.year,
-            }),
-          ).unwrap();
+          toast.success(t('finance.update_category_success'));
+        } else {
+          await wmCategory.createCategory({
+            name: values.name,
+            icon: values.icon,
+            color: values.color,
+            userId: session!.user!.id,
+            limit: values.budget_limit,
+          });
           toast.success(t('finance.create_category_success'));
         }
         navigation.goBack();
@@ -134,8 +118,9 @@ const CategoryFormScreen = ({ route, navigation }: Props) => {
     },
   });
 
+
   const handleDelete = () => {
-    if (!isEdit || !categoryId) return;
+    if (!isEdit || !category) return;
     Alert.alert(
       t('finance.delete_category'),
       t('warning.delete_category_confirm'),
@@ -146,13 +131,7 @@ const CategoryFormScreen = ({ route, navigation }: Props) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await categoryService.deleteCategory(categoryId);
-              await dispatch(
-                getCategoriesThunk({
-                  month: time.month,
-                  year: time.year,
-                }),
-              ).unwrap();
+              await wmCategory.deleteCategory(category);
               toast.success(t('finance.delete_category_success'));
               navigateToMain('Statistics');
             } catch (error) {
@@ -172,6 +151,14 @@ const CategoryFormScreen = ({ route, navigation }: Props) => {
     const current = formCategory.values.budget_limit;
     formCategory.setFieldValue('budget_limit', Math.max(0, current + amount));
   };
+
+  if (isLoading) {
+    return (
+      <Screen padding="none" edges={[]}>
+        <LoadingChildren />
+      </Screen>
+    );
+  }
 
   return (
     <Screen padding="none" edges={[]}>
@@ -431,4 +418,24 @@ const CategoryFormScreen = ({ route, navigation }: Props) => {
   );
 };
 
-export default CategoryFormScreen;
+const enhance = withObservables(
+  ['categoryId'],
+  ({ categoryId }: { categoryId?: string }) => ({
+    category: categoryId
+      ? database.collections.get<Category>('categories').findAndObserve(categoryId)
+      : of(null),
+  }),
+);
+
+const EnhancedCategoryForm = enhance(CategoryFormInner);
+
+export default function CategoryFormScreen() {
+  const { categoryId } = useRoute<RouteProp<RootStackParamList, 'CategoryForm'>>().params ?? {};
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'CategoryForm'>>();
+  return (
+    <EnhancedCategoryForm
+      categoryId={categoryId}
+      navigation={navigation}
+    />
+  );
+}
