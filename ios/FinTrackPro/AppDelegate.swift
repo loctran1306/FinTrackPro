@@ -5,7 +5,6 @@ import React_RCTAppDelegate
 import ReactAppDependencyProvider
 import Firebase
 import GoogleSignIn
-import EXUpdates // Quan trọng: Thêm dòng này để dùng được tính năng OTA
 
 @main
 class AppDelegate: ExpoAppDelegate {
@@ -37,6 +36,7 @@ class AppDelegate: ExpoAppDelegate {
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
+  // Xử lý Google Sign In
   override func application(
     _ app: UIApplication,
     open url: URL,
@@ -46,21 +46,19 @@ class AppDelegate: ExpoAppDelegate {
       return true
     }
     return super.application(app, open: url, options: options)
-  }      
+  }
 }
 
 class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
   override func sourceURL(for bridge: RCTBridge) -> URL? {
-    // Ép app lấy URL từ bundleURL() để Expo Updates có thể can thiệp
     return bundleURL()
   }
 
   override func bundleURL() -> URL? {
 #if DEBUG
-    return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: ".expo/.virtual-metro-entry")
+    return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
 #else
-    // Thay đổi quan trọng: Ưu tiên lấy URL của bản cập nhật OTA (nếu có)
-    return AppController.sharedInstance.launchAssetUrl ?? Bundle.main.url(forResource: "main", withExtension: "jsbundle")
+    return Bundle.main.url(forResource: "main", withExtension: "jsbundle")
 #endif
   }
 }
