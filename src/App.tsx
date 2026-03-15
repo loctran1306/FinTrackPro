@@ -1,4 +1,3 @@
-import 'react-native-get-random-values';
 import { ThemeProvider } from '@shopify/restyle';
 import React, { useEffect, useMemo, useRef } from 'react';
 import {

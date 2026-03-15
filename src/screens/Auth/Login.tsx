@@ -18,7 +18,6 @@ import { useTheme } from '@shopify/restyle';
 import { Box, Text } from '@theme/components';
 import React, { useCallback, useRef, useState } from 'react';
 import { Image, Platform, StyleSheet } from 'react-native';
-import 'react-native-url-polyfill/auto';
 import { useTranslation } from 'react-i18next';
 
 export default function LoginScreen({ navigation }: any) {

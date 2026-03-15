@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from 'react-native-config';
-import { deviceService } from '@/services/device/device.service';
 import { Platform } from 'react-native';
 
 const supabaseUrl = Config.NEXT_PUBLIC_SUPABASE_URL;
@@ -51,6 +50,7 @@ export const checkSessionAndToken = async (): Promise<{
     if (session) {
       if (Platform.OS === 'android') {
         if (session.user.id && session.user.id !== '') {
+          const { deviceService } = require('@/services/device/device.service');
           await deviceService.updateDeviceToken(session.user.id);
         }
       }
