@@ -1,16 +1,16 @@
-import React, { FC, useCallback, useRef, useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  TouchableOpacity,
-  useWindowDimensions,
-} from 'react-native';
-import { Box, Text } from '@/theme/components';
+import AppButton from '@/components/button/AppButton';
 import { FONTS, Theme } from '@/theme';
+import { Box, Text } from '@/theme/components';
+import { RADIUS } from '@/theme/constant';
 import { useTheme } from '@shopify/restyle';
 import LunarCalendar from 'lunar-calendar';
 import moment from 'moment';
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  StyleSheet,
+  useWindowDimensions
+} from 'react-native';
 import { CalendarList } from 'react-native-calendars';
-import AppButton from '@/components/button/AppButton';
 import TimePicker from './TimePicker';
 
 interface DateTimePickerProps {
@@ -103,7 +103,7 @@ const DateTimePicker: FC<DateTimePickerProps> = ({
     [colors],
   );
 
-  const DayComponent = useCallback(
+  const DayComponent =
     ({ date, state, marking }: any) => {
       const isSelected = marking?.selected;
       const isToday = date.dateString === today;
@@ -115,7 +115,7 @@ const DateTimePicker: FC<DateTimePickerProps> = ({
         date.day,
       );
       return (
-        <TouchableOpacity
+        <AppButton
           key={isSelected ? 'selected' : 'normal'}
           disabled={isFuture}
           onPress={() => setSelectedDate(date.dateString)}
@@ -123,17 +123,21 @@ const DateTimePicker: FC<DateTimePickerProps> = ({
             styles.dayBox,
             isSelected && { backgroundColor: colors.primary },
             isFuture && { opacity: 0.45 },
+            { padding: 0 }
           ]}
+
+
+
         >
           <Text
             style={{
               color: isSelected
                 ? colors.white
                 : state === 'disabled' || isFuture
-                ? '#ccc'
-                : isToday
-                ? colors.primary
-                : colors.text,
+                  ? '#ccc'
+                  : isToday
+                    ? colors.primary
+                    : colors.text,
             }}
           >
             {date.day}
@@ -144,64 +148,63 @@ const DateTimePicker: FC<DateTimePickerProps> = ({
               color: isSelected
                 ? colors.white
                 : isToday
-                ? colors.highlight
-                : colors.secondaryText,
+                  ? colors.highlight
+                  : colors.secondaryText,
             }}
           >
             {lunarLabel}
           </Text>
-        </TouchableOpacity>
+        </AppButton>
       );
-    },
-    [colors, today, disableFuture, getLunarLabel],
-  );
+    }
+
 
   return (
-    <Box height="100%">
-      {!hideTimePicker && (
-        <Box alignItems="center">
-          <TimePicker
-            hour={hour}
-            minute={minute}
-            setHour={setHour}
-            setMinute={setMinute}
-            hiddenTitle
-          />
-        </Box>
-      )}
-      <CalendarList
-        current={selectedDate}
-        maxDate={maxDate}
-        horizontal
-        pagingEnabled
-        scrollEnabled
-        nestedScrollEnabled
-        calendarWidth={calendarWidth - 32}
-        pastScrollRange={numberMonthBefore}
-        futureScrollRange={numberMonthFuture}
-        showScrollIndicator={false}
-        hideArrows={false}
-        scrollEventThrottle={16}
-        calendarStyle={{
-          marginBlockEnd: -20,
-        }}
-        onDayPress={day => {
-          if (disableFuture && moment(day.dateString).isAfter(today, 'day'))
-            return;
-          setSelectedDate(day.dateString);
-        }}
-        markedDates={markedDates}
-        theme={calendarTheme}
-        dayComponent={DayComponent}
-      />
-
-      <Box paddingHorizontal="m" paddingBottom="m" marginTop="s">
-        <AppButton backgroundColor="primary" onPress={handleConfirm}>
-          <Text color="white" textAlign="center">
-            XÁC NHẬN
-          </Text>
-        </AppButton>
+    <Box height="100%" gap='m'>
+      <Box paddingVertical='m' backgroundColor='card' borderRadius={RADIUS.m}>
+        {!hideTimePicker && (
+          <Box alignItems="center">
+            <TimePicker
+              hour={hour}
+              minute={minute}
+              setHour={setHour}
+              setMinute={setMinute}
+              hiddenTitle
+            />
+          </Box>
+        )}
+        <CalendarList
+          current={selectedDate}
+          maxDate={maxDate}
+          horizontal
+          pagingEnabled
+          scrollEnabled
+          nestedScrollEnabled
+          calendarWidth={calendarWidth - 32}
+          pastScrollRange={numberMonthBefore}
+          futureScrollRange={numberMonthFuture}
+          showScrollIndicator={false}
+          hideArrows={false}
+          scrollEventThrottle={16}
+          calendarStyle={{
+            marginBlockEnd: -20,
+          }}
+          onDayPress={day => {
+            if (disableFuture && moment(day.dateString).isAfter(today, 'day'))
+              return;
+            setSelectedDate(day.dateString);
+          }}
+          markedDates={markedDates}
+          theme={calendarTheme}
+          dayComponent={DayComponent}
+        />
       </Box>
+
+      <AppButton backgroundColor="primary" onPress={handleConfirm}>
+        <Text color="white" textAlign="center">
+          XÁC NHẬN
+        </Text>
+      </AppButton>
     </Box>
   );
 };

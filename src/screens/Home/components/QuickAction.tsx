@@ -1,6 +1,5 @@
 import AppIcon from '@/components/common/AppIcon';
 import SpeedDialWrapper from '@/components/common/SpeedDialWrapper';
-import { WALLET_TYPES } from '@/constants/wallet';
 import { RootStackParamList } from '@/navigation/types';
 import { Theme } from '@/theme';
 import { Box, Text } from '@/theme/components';
@@ -8,9 +7,10 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
 import { useTranslation } from 'react-i18next';
+import { WALLET_TYPE, WALLET_TYPE_ICON } from '@/constants/wallet.const';
 
 type Props = {
-  onCreateWallet: (type: keyof typeof WALLET_TYPES) => void;
+  onCreateWallet: (type: WALLET_TYPE) => void;
   onQuickTransaction?: () => void;
 };
 
@@ -23,29 +23,23 @@ const QuickAction = ({ onCreateWallet, onQuickTransaction }: Props) => {
   // Options cho nút "Tạo ví mới"
   const walletOptions = [
     {
-      icon: 'money-bill',
+      icon: WALLET_TYPE_ICON[WALLET_TYPE.CASH],
       label: t('finance.payment_wallet'),
-      onPress: () => onCreateWallet('cash'),
+      onPress: () => onCreateWallet(WALLET_TYPE.CASH),
     },
     {
-      icon: 'id-card',
-      label: t('finance.bank_wallet'),
-      onPress: () => onCreateWallet('bank'),
+      icon: WALLET_TYPE_ICON[WALLET_TYPE.JAR],
+      label: t('finance.jar_wallet'),
+      onPress: () => onCreateWallet(WALLET_TYPE.JAR),
     },
     {
-      icon: 'credit-card',
+      icon: WALLET_TYPE_ICON[WALLET_TYPE.CREDIT],
       label: t('finance.credit_wallet'),
-      onPress: () => onCreateWallet('credit'),
+      onPress: () => onCreateWallet(WALLET_TYPE.CREDIT),
     },
   ];
 
   const quickActions = [
-    {
-      id: 'quick',
-      label: t('finance.quick_entry') || 'Nhập nhanh',
-      icon: <AppIcon name="pen-to-square" size={20} color={colors.primary} />,
-      onMainPress: onQuickTransaction,
-    },
     {
       id: 'add',
       label: t('finance.create_new_wallet'),
@@ -66,12 +60,18 @@ const QuickAction = ({ onCreateWallet, onQuickTransaction }: Props) => {
       onMainPress: () => rootNavigation.navigate('WalletTransfer'),
     },
     {
-      id: 'update',
-      label: t('finance.update_balance'),
-      icon: <AppIcon name="bolt" size={20} color={colors.primary} />,
-      options: [],
-      onMainPress: () => rootNavigation.navigate('BalanceAdjustment'),
+      id: 'quick',
+      label: t('finance.quick_entry') || 'Nhập nhanh',
+      icon: <AppIcon name="pen-to-square" size={20} color={colors.primary} />,
+      onMainPress: onQuickTransaction,
     },
+    // {
+    //   id: 'update',
+    //   label: t('finance.update_balance'),
+    //   icon: <AppIcon name="bolt" size={20} color={colors.primary} />,
+    //   options: [],
+    //   onMainPress: () => rootNavigation.navigate('BalanceAdjustment'),
+    // },
   ];
 
   return (

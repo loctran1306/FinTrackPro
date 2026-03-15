@@ -13,6 +13,7 @@ interface Props extends React.ComponentProps<typeof BottomSheetTextInput> {
   icon?: string;
   error?: string;
   type?: KeyboardTypeOptions;
+  suffix?: string;
 }
 
 const AppBottomSheetInput = ({
@@ -20,6 +21,7 @@ const AppBottomSheetInput = ({
   icon,
   error,
   type = 'default',
+  suffix,
   ...props
 }: Props) => {
   const { colors } = useTheme<Theme>();
@@ -39,8 +41,8 @@ const AppBottomSheetInput = ({
         paddingHorizontal="m"
         height={50}
         borderRadius={RADIUS.m}
-        backgroundColor="main"
-        borderWidth={1.5}
+        backgroundColor="card"
+        borderWidth={1}
         style={{ borderColor: isFocused ? colors.primary : colors.card }}
       >
         {icon && (
@@ -61,6 +63,11 @@ const AppBottomSheetInput = ({
           keyboardType={type}
           {...props}
         />
+        {suffix && (
+          <Text variant="body" color="secondaryText" marginLeft="xs">
+            {suffix}
+          </Text>
+        )}
       </Box>
 
       {error && (

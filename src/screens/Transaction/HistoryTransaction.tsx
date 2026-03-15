@@ -11,6 +11,7 @@ import { FlashList } from "@shopify/flash-list";
 import { observeTransactionCount, observeTransactions } from "@/services/watermelondb/wmTransaction.service";
 import LoadingChildren from "@/components/loading/LoadingChildren";
 import { useAppSelector } from "@/store/hooks";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const INITIAL_TAKE = 50;
 const LOAD_MORE_COUNT = 50;
@@ -27,6 +28,7 @@ const HistoryTransactionScreen = ({
   onLoadMore,
 }: Props) => {
   const { t } = useTranslation();
+  const { bottom } = useSafeAreaInsets();
 
   const renderItem = useCallback(({ item }: { item: Transaction }) => (
     <TransactionItem transaction={item} />
@@ -41,7 +43,7 @@ const HistoryTransactionScreen = ({
   }, [hasMore, onLoadMore]);
 
   return (
-    <Screen>
+    <Screen edges={['top']}>
       <AppHeader title={t('finance.history_transaction')} />
       <Box flex={1}>
         <FlashList
@@ -53,6 +55,9 @@ const HistoryTransactionScreen = ({
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.3}
           ListFooterComponent={hasMore ? <LoadingChildren /> : null}
+          contentContainerStyle={{
+            paddingBottom: bottom,
+          }}
         />
       </Box>
     </Screen>

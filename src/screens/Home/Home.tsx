@@ -9,16 +9,14 @@ import AppBottomSheet, {
 } from '@/components/common/AppBottomSheet';
 import AppBottomSheetInput from '@/components/common/AppBottomSheetInput';
 import AppIcon from '@/components/common/AppIcon';
-import LoadingWithLogo from '@/components/loading/LoadingWithLogo';
 import QuickTransactionBottomSheet, {
   QuickTransactionBottomSheetRef,
 } from '@/components/modals/QuickTransactionBottomSheet';
-import { WALLET_TYPES } from '@/constants/wallet';
+import { WALLET_TYPE, WALLET_TYPE_LABEL } from '@/constants/wallet.const';
 import { RootStackParamList } from '@/navigation/types';
 import { syncData } from '@/services/sync/syncDataSupabase';
 import { getCategoriesThunk } from '@/store/category/category.thunk';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { createWalletThunk } from '@/store/wallet/wallet.thunk';
 import { Theme } from '@/theme';
 import { SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
@@ -31,19 +29,17 @@ import HomeOverview from './components/HomeOverview';
 import HomeTransaction from './components/HomeTransaction';
 import QuickAction from './components/QuickAction';
 import WalletList from './components/WalletList';
+import { createWallet } from '@/services/watermelondb/wmWallet.service';
 
 export const HomeScreen = () => {
   const { t } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
-  const [selectedWalletType, setSelectedWalletType] = useState<
-    keyof typeof WALLET_TYPES | null
-  >(null);
+  const [selectedWalletType, setSelectedWalletType] =
+    useState<WALLET_TYPE | null>(null);
   const [walletName, setWalletName] = useState('');
   const [walletAmount, setWalletAmount] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [loadingComplete, setLoadingComplete] = useState(false);
   const dispatch = useAppDispatch();
   const { session } = useAppSelector(state => state.auth);
   const { time, isNetworkConnected } = useAppSelector(state => state.global);
@@ -74,44 +70,27 @@ export const HomeScreen = () => {
     await syncData();
   };
 
-  const handleCreateWallet = (type: keyof typeof WALLET_TYPES) => {
+  const handleCreateWallet = (type: WALLET_TYPE) => {
     setSelectedWalletType(type);
     bottomSheetRef.current?.expand();
   };
 
-  const resultRef = useRef<any>(null);
   const handleCreateWalletConfirm = async () => {
     if (!session?.user?.id || !selectedWalletType) return;
-    const walletData = {
-      user_id: session.user.id,
-      display_name: walletName,
-      wallet_type: selectedWalletType,
-      initial_balance: Number(walletAmount),
-      current_balance: Number(walletAmount),
-      credit_limit: 0,
+    const data = {
+      userId: session.user.id,
+      displayName: walletName,
+      walletType: selectedWalletType,
+      initialBalance: Number(walletAmount),
+      currentBalance: Number(walletAmount),
+      creditLimit: 0,
     };
-    setLoading(true);
-    try {
-      const res = await dispatch(createWalletThunk(walletData)).unwrap();
-      resultRef.current = res;
-    } catch (error) {
-      toast.error(error as string);
-    } finally {
-      setLoadingComplete(true);
-    }
-  };
-  const handleCreateWalletComplete = () => {
-    setLoadingComplete(false);
-    setLoading(false);
-    if (resultRef.current) {
-      toast.success(t('finance.create_wallet_success'));
-      setWalletName('');
-      setWalletAmount('');
-      setSelectedWalletType(null);
-      bottomSheetRef.current?.close();
-    } else {
-      toast.error(t('finance.create_wallet_error'));
-    }
+    await createWallet(data);
+    toast.success(t('finance.create_wallet_success'));
+    setWalletName('');
+    setWalletAmount('');
+    setSelectedWalletType(null);
+    bottomSheetRef.current?.close();
   };
 
   const bottomSheetRef = useRef<AppBottomSheetRef>(null);
@@ -123,7 +102,7 @@ export const HomeScreen = () => {
       <AppScrollView
         insetTop={false}
         onRefresh={handleRefresh}
-        refreshBackground={colors.highlight}
+        refreshBackground={colors.primary}
         contentContainerStyle={{
           paddingBottom: bottomTabBarHeight + SPACING.m,
         }}
@@ -167,7 +146,7 @@ export const HomeScreen = () => {
       >
         <Text variant="header" marginBottom="m">
           {t('finance.create_wallet')}{' '}
-          {selectedWalletType ? WALLET_TYPES[selectedWalletType] : ''}
+          {selectedWalletType ? WALLET_TYPE_LABEL[selectedWalletType] : ''}
         </Text>
         <AppBottomSheetInput
           label={t('finance.wallet_name')}
@@ -181,38 +160,30 @@ export const HomeScreen = () => {
           placeholder={t('finance.amount_placeholder')}
           value={walletAmount}
           onChangeText={setWalletAmount}
+          suffix=".000đ"
         />
         <Box>
-          {!loading ? (
-            <AppButton
-              disabled={!walletName || !walletAmount}
-              backgroundColor="primary"
-              shadow={false}
-              onPress={handleCreateWalletConfirm}
-              style={{
-                marginTop: SPACING.m,
-              }}
+          <AppButton
+            disabled={!walletName || !walletAmount}
+            backgroundColor="primary"
+            shadow={false}
+            onPress={handleCreateWalletConfirm}
+            style={{
+              marginTop: SPACING.m,
+            }}
+          >
+            <Box
+              flexDirection="row"
+              alignItems="center"
+              justifyContent="center"
+              gap="s"
             >
-              <Box
-                flexDirection="row"
-                alignItems="center"
-                justifyContent="center"
-                gap="s"
-              >
-                <AppIcon name="plus" size={20} color="white" />
-                <Text variant="body" fontFamily="semiBold" color="white">
-                  {t('finance.create_wallet')}
-                </Text>
-              </Box>
-            </AppButton>
-          ) : (
-            <Box alignItems="center" justifyContent="center">
-              <LoadingWithLogo
-                isComplete={loadingComplete}
-                onComplete={handleCreateWalletComplete}
-              />
+              <AppIcon name="plus" size={20} color="white" />
+              <Text variant="body" fontFamily="semiBold" color="white">
+                {t('finance.create_wallet')}
+              </Text>
             </Box>
-          )}
+          </AppButton>
         </Box>
       </AppBottomSheet>
       <QuickTransactionBottomSheet ref={quickTransactionRef} />

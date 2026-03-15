@@ -52,10 +52,10 @@ const AppInput = ({
       <Box
         flexDirection="row"
         alignItems="center"
-        paddingHorizontal="m"
-        height={50}
+        padding="s"
+        minHeight={50}
         borderRadius={RADIUS.m}
-        backgroundColor="main" // Màu nền chính của app
+        backgroundColor="card" // Màu nền chính của app
         borderWidth={noBorder ? 0 : 1.5}
         style={{ borderColor: noBorder ? 'transparent' : getBorderColor() }}
       >
@@ -103,8 +103,7 @@ const styles = StyleSheet.create({
   input: {
     ...TEXT_VARIANTS.defaults,
     flex: 1,
-    height: '100%',
-    paddingVertical: 0, // Tránh lệch chữ trên Android
+    height: 'auto',
   },
 });
 

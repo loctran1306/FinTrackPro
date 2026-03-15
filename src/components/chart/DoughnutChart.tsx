@@ -1,5 +1,5 @@
 import { formatVND } from '@/helpers/currency.helper';
-import { COLORS } from '@/theme';
+import { Theme } from '@/theme';
 import {
   Canvas,
   Path,
@@ -9,6 +9,7 @@ import {
   useFont,
   Group,
 } from '@shopify/react-native-skia';
+import { useTheme } from '@shopify/restyle';
 import React, { useMemo } from 'react';
 import { Platform, View, StyleSheet, TouchableWithoutFeedback, Text } from 'react-native';
 
@@ -46,7 +47,7 @@ const DoughnutChart = ({
   onSelect,
 }: DoughnutChartProps) => {
   const fontPct = useFont(require('../../../assets/fonts/static/LexendDeca-SemiBold.ttf'), 10) ?? fallbackFont;
-
+  const { colors } = useTheme<Theme>();
   const total = data.reduce((sum, d) => sum + d.value, 0);
   const center = size / 2;
 
@@ -151,7 +152,7 @@ const DoughnutChart = ({
                         y={ty + FONT_SIZE_PCT / 3}
                         text={textStr}
                         font={fontPct}
-                        color={COLORS.black}
+                        color={colors.white}
                       />
                     </Group>
                   )}

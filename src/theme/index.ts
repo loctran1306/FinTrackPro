@@ -2,16 +2,18 @@ import { createTheme } from '@shopify/restyle';
 import { SPACING } from './constant';
 
 export const palette = {
-  // Light Palette (Bộ màu bạn chọn)
-  skyBlue: '#AEE4FF',
-  blueLight: '#f4fbfd',
-  periwinkle: '#ff7d66',
-  softPink: '#FFB8D0',
-  offWhite: '#FEE5E1',
-  peach: '#FFBFB3',
+  // Light
+  SoftPetal: '#fce8ec', // Hồng Cánh hoa
+  SoftCoral: '#F291A3', // Hồng san hô nhạt
+  SoftRose: '#fad1d9', // Hồng nhạt
+
+  // Dark
+  SoftPetalDark: '#170306',
+  SoftCoralDark: '#ec5f79',
+  SoftRoseDark: '#5b0b19',
 
   white: '#FFFFFF',
-  black: '#1C1C1E',
+  black: '#19191a',
   gray: '#8E8E93',
   grayLight: '#f2f2f2',
   red: '#A80000',
@@ -20,19 +22,17 @@ export const palette = {
   blue: '#0456fb',
 
   // Dark Palette (Phối lại cho Dark Mode)
-  deepNavy: '#0F172A',
   surfaceDark: '#1E293B',
   periwinkleDark: '#818CF8', // Sáng hơn một chút để nổi trên nền tối
 };
 
 export const COLORS = {
-  main: palette.white,
+  main: palette.SoftPetal,
+  primary: palette.SoftCoral,
+  highlight: palette.SoftRose,
   text: palette.black,
-  primary: palette.periwinkle,
-  card: palette.grayLight,
+  card: palette.white,
   secondaryText: palette.gray,
-  accent: palette.softPink,
-  highlight: palette.peach,
   white: palette.white,
   red: palette.red,
   black: palette.black,
@@ -43,10 +43,11 @@ export const COLORS = {
 };
 
 export const COLORS_DARK = {
-  main: palette.deepNavy,
+  main: palette.SoftPetalDark,
+  primary: palette.SoftCoralDark,
+  highlight: palette.SoftRoseDark,
   text: palette.white,
-  primary: palette.periwinkleDark,
-  card: palette.surfaceDark,
+  card: palette.black,
   secondaryText: palette.gray,
 };
 
@@ -116,7 +117,6 @@ export const theme = createTheme({
     secondaryText: COLORS.secondaryText,
     primary: COLORS.primary,
     card: COLORS.card,
-    accent: COLORS.accent,
     highlight: COLORS.highlight,
     danger: COLORS.red,
     success: COLORS.green,
@@ -139,6 +139,7 @@ export const darkTheme: Theme = {
     main: COLORS_DARK.main,
     text: COLORS_DARK.text,
     primary: COLORS_DARK.primary,
+    highlight: COLORS_DARK.highlight,
     card: COLORS_DARK.card,
     secondaryText: COLORS_DARK.secondaryText,
   },

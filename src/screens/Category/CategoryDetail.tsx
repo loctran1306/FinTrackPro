@@ -73,7 +73,7 @@ const CategoryDetail = ({ categoryId, category, transactions = [] }: Props) => {
           style={{ padding: SPACING.s }}
           shadow={false}
         >
-          <AppIcon name="xmark" size={24} color={colors.text} />
+          <AppIcon name='chevron-left' size={18} color={colors.text} />
         </AppButton>
         <Box flex={1} alignItems="center" justifyContent="center">
           <Text variant="subheader" textAlign="center">

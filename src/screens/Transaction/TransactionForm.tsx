@@ -36,6 +36,8 @@ import {
   createTransaction,
   updateTransaction,
 } from '@/services/watermelondb/wmTransaction.service';
+import { WALLET_TYPE } from '@/constants/wallet.const';
+import { formatTime } from '@/helpers/time.helper';
 
 type TransactionMode = 'expense' | 'income';
 
@@ -66,9 +68,26 @@ const TransactionFormEnhanced = ({
 
   const calculatorSheetRef = useRef<AppBottomSheetRef>(null);
   const datePickerSheetRef = useRef<AppBottomSheetRef>(null);
+  const heldCalculatorSheetRef = useRef<AppBottomSheetRef>(null);
 
   const [selectedWallet, setSelectedWallet] = useState<any | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
+
+  // Held amount state (tiền giữ hộ - chỉ dùng khi ví credit + expense)
+  const [heldAmount, setHeldAmount] = useState<number>(0);
+  const [selectedHeldWallet, setSelectedHeldWallet] = useState<Wallet | null>(
+    null,
+  );
+
+  // Kiểm tra xem có hiển thị phần giữ hộ không
+  const isCreditExpense =
+    type === 'expense' && selectedWallet?.walletType === 'credit';
+
+  // Danh sách ví
+  const availableWallets = wallets.filter(w => w.walletType !== WALLET_TYPE.JAR);
+
+  // Danh sách ví nhận (loại bỏ ví credit đang chọn)
+  const availableHeldWallets = wallets.filter(w => w.id !== selectedWallet?.id && w.walletType === WALLET_TYPE.JAR);
 
   const { session } = useAppSelector(state => state.auth);
 
@@ -106,6 +125,11 @@ const TransactionFormEnhanced = ({
     calculatorSheetRef.current?.close();
   };
 
+  const handleHeldCalculatorDone = (result: number) => {
+    setHeldAmount(result);
+    heldCalculatorSheetRef.current?.close();
+  };
+
   const handleDateConfirm = (newDate: Date) => {
     setDate(newDate);
     datePickerSheetRef.current?.close();
@@ -113,6 +137,14 @@ const TransactionFormEnhanced = ({
 
   const handleSaveTransaction = async () => {
     if (!session?.user || !selectedWallet) return;
+
+    // Validate held amount
+    if (isCreditExpense && heldAmount > 0) {
+      if (!selectedHeldWallet) {
+        toast.error(t('finance.select_held_wallet'));
+        return;
+      }
+    }
 
     try {
       setLoading(true);
@@ -138,6 +170,30 @@ const TransactionFormEnhanced = ({
           toast.success(t('finance.add_transaction_success'));
         } else {
           toast.error(t('finance.add_transaction_error'));
+        }
+
+        // Tự tạo giao dịch transfer tiền giữ hộ
+        if (
+          !isEdit &&
+          isCreditExpense &&
+          heldAmount > 0 &&
+          selectedHeldWallet
+        ) {
+          try {
+            await createTransaction({
+              amount: heldAmount,
+              note: `${t('finance.held_amount')}: ${note || selectedCategory?.name || ''
+                }`.trim(),
+              date: date.getTime(),
+              type: 'transfer',
+              walletId: selectedWallet.id,
+              toWalletId: selectedHeldWallet.id,
+              categoryId: selectedCategory?.id ?? '',
+              userId: session.user.id,
+            });
+          } catch (transferError) {
+            console.log('Held transfer error:', transferError);
+          }
         }
       }
 
@@ -205,42 +261,43 @@ const TransactionFormEnhanced = ({
         backButton={handleGoBack}
       />
       <AppScrollView>
-        <Box flexDirection="row" padding="m" gap="m">
-          {renderTab('expense', t('finance.expense'))}
-          {renderTab('income', t('finance.income'))}
-        </Box>
-
-        <Box alignItems="center" justifyContent="center" paddingVertical="m">
-          <TouchableOpacity
-            onPress={() => {
-              Keyboard.dismiss();
-              calculatorSheetRef.current?.expand();
-            }}
-          >
-            <Text textAlign="center" variant="caption" color="secondaryText">
-              {t('finance.amount')}
-            </Text>
-            <Text
-              textAlign="center"
-              variant="header"
-              fontSize={40}
-              color={type === 'expense' ? 'danger' : 'success'}
-            >
-              {formatVND(Number(amount))}
-            </Text>
-          </TouchableOpacity>
-          <AppInput
-            onFocus={() => calculatorSheetRef.current?.close()}
-            noBorder
-            value={note}
-            onChangeText={setNote}
-            placeholder={t('common.enter_note')}
-            textAlign="center"
-          />
-        </Box>
-
         <Box paddingHorizontal="m" gap="m">
-          <Box flexDirection="row" alignItems="center" justifyContent="center">
+
+          <Box flexDirection="row" padding="m" gap="m">
+            {renderTab('expense', t('finance.expense'))}
+            {renderTab('income', t('finance.income'))}
+          </Box>
+
+          <Box backgroundColor="card" borderRadius={RADIUS.m} alignItems="center" justifyContent="center" paddingVertical="m">
+            <AppButton
+              onPress={() => {
+                Keyboard.dismiss();
+                calculatorSheetRef.current?.expand();
+              }}
+            >
+              <Text textAlign="center" variant="caption" color="secondaryText">
+                {t('finance.amount')}
+              </Text>
+              <Text
+                numberOfLines={1}
+                textAlign="center"
+                variant="header"
+                fontSize={40}
+                color={type === 'expense' ? 'danger' : 'success'}
+              >
+                {formatVND(Number(amount))}
+              </Text>
+            </AppButton>
+            <AppInput
+              multiline
+              numberOfLines={4}
+              onFocus={() => calculatorSheetRef.current?.close()}
+              noBorder
+              value={note}
+              onChangeText={setNote}
+              placeholder={t('common.enter_note')}
+              textAlign="center"
+            />
             <AppButton
               style={{
                 flexDirection: 'row',
@@ -265,23 +322,83 @@ const TransactionFormEnhanced = ({
                 />
               </Box>
               <Text variant="caption" fontFamily="semiBold">
-                {dayjs(date).format('DD/MM/YYYY - HH:mm')}
+                {formatTime(date)}
               </Text>
             </AppButton>
           </Box>
 
-          {type === 'expense' && (
+          <Box gap="m">
+            <Box flexDirection="row" alignItems="center" justifyContent="center" />
+
+            {type === 'expense' && (
+              <Box gap="s">
+                <Text variant="body" color="secondaryText">
+                  {t('finance.category')}
+                </Text>
+                <Box flexDirection="row" flexWrap="wrap" gap="s">
+                  {categories?.map(category => {
+                    const isSelected = selectedCategory?.id === category.id;
+                    return (
+                      <TouchableOpacity
+                        key={category.id}
+                        onPress={() => setSelectedCategory(category)}
+                      >
+                        <Box
+                          paddingVertical="xs"
+                          paddingHorizontal="s"
+                          borderRadius={RADIUS.l}
+                          backgroundColor={isSelected ? 'primary' : 'card'}
+                          flexDirection="row"
+                          alignItems="center"
+                          gap="xs"
+                          borderWidth={1}
+                          borderColor={isSelected ? 'primary' : 'card'}
+                        >
+                          <Box
+                            width={20}
+                            height={20}
+                            borderRadius={10}
+                            backgroundColor={isSelected ? 'white' : 'main'}
+                            alignItems="center"
+                            justifyContent="center"
+                          >
+                            <AppIcon
+                              name={category.icon}
+                              size={10}
+                              color={isSelected ? colors.primary : category.color}
+                            />
+                          </Box>
+                          <Text
+                            variant="caption"
+                            fontFamily="semiBold"
+                            color={isSelected ? 'white' : 'text'}
+                          >
+                            {category.name}
+                          </Text>
+                        </Box>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </Box>
+              </Box>
+            )}
+
             <Box gap="s">
               <Text variant="body" color="secondaryText">
-                {t('finance.category')}
+                {t('finance.wallet')}
               </Text>
               <Box flexDirection="row" flexWrap="wrap" gap="s">
-                {categories?.map(category => {
-                  const isSelected = selectedCategory?.id === category.id;
+                {availableWallets.map(wallet => {
+                  const isSelected = selectedWallet?.id === wallet.id;
+                  let iconName = 'wallet';
+                  if (wallet.walletType === 'cash') iconName = 'money-bill';
+                  if (wallet.walletType === 'bank') iconName = 'building-columns';
+                  if (wallet.walletType === 'credit') iconName = 'credit-card';
+
                   return (
                     <TouchableOpacity
-                      key={category.id}
-                      onPress={() => setSelectedCategory(category)}
+                      key={wallet.id}
+                      onPress={() => setSelectedWallet(wallet)}
                     >
                       <Box
                         paddingVertical="xs"
@@ -303,9 +420,11 @@ const TransactionFormEnhanced = ({
                           justifyContent="center"
                         >
                           <AppIcon
-                            name={category.icon}
+                            name={iconName}
                             size={10}
-                            color={isSelected ? colors.primary : category.color}
+                            color={
+                              isSelected ? colors.primary : colors.secondaryText
+                            }
                           />
                         </Box>
                         <Text
@@ -313,7 +432,7 @@ const TransactionFormEnhanced = ({
                           fontFamily="semiBold"
                           color={isSelected ? 'white' : 'text'}
                         >
-                          {category.name}
+                          {wallet.displayName}
                         </Text>
                       </Box>
                     </TouchableOpacity>
@@ -321,93 +440,178 @@ const TransactionFormEnhanced = ({
                 })}
               </Box>
             </Box>
-          )}
 
-          <Box gap="s">
-            <Text variant="body" color="secondaryText">
-              {t('finance.wallet')}
-            </Text>
-            <Box flexDirection="row" flexWrap="wrap" gap="s">
-              {wallets.map(wallet => {
-                const isSelected = selectedWallet?.id === wallet.id;
-                let iconName = 'wallet';
-                if (wallet.walletType === 'cash') iconName = 'money-bill';
-                if (wallet.walletType === 'bank') iconName = 'building-columns';
-                if (wallet.walletType === 'credit') iconName = 'credit-card';
-
-                return (
-                  <TouchableOpacity
-                    key={wallet.id}
-                    onPress={() => setSelectedWallet(wallet)}
-                  >
-                    <Box
-                      paddingVertical="xs"
-                      paddingHorizontal="s"
-                      borderRadius={RADIUS.l}
-                      backgroundColor={isSelected ? 'primary' : 'card'}
-                      flexDirection="row"
-                      alignItems="center"
-                      gap="xs"
-                      borderWidth={1}
-                      borderColor={isSelected ? 'primary' : 'card'}
-                    >
-                      <Box
-                        width={20}
-                        height={20}
-                        borderRadius={10}
-                        backgroundColor={isSelected ? 'white' : 'main'}
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        <AppIcon
-                          name={iconName}
-                          size={10}
-                          color={
-                            isSelected ? colors.primary : colors.secondaryText
-                          }
-                        />
-                      </Box>
-                      <Text
-                        variant="caption"
-                        fontFamily="semiBold"
-                        color={isSelected ? 'white' : 'text'}
-                      >
-                        {wallet.displayName}
-                      </Text>
-                    </Box>
-                  </TouchableOpacity>
-                );
-              })}
-            </Box>
-          </Box>
-
-          {loading ? (
-            <Box alignItems="center" justifyContent="center">
-              <LoadingWithLogo
-                isComplete={isComplete}
-                onComplete={handleSaveComplete}
-              />
-            </Box>
-          ) : (
-            <AppButton
-              disabled={
-                amount <= 0 ||
-                !selectedWallet ||
-                (type === 'expense' && !selectedCategory)
-              }
-              onPress={handleSaveTransaction}
-              backgroundColor={type === 'expense' ? 'danger' : 'success'}
-            >
-              <Text
-                textAlign="center"
-                variant="subheader"
-                color="white"
-                textTransform="uppercase"
+            {/* Held amount section - chỉ hiện khi ví credit + expense + không phải edit */}
+            {isCreditExpense && !isEdit && (
+              <Box
+                gap="s"
+                padding="m"
+                borderRadius={RADIUS.l}
+                backgroundColor="card"
+                borderWidth={1}
+                borderColor="card"
               >
-                {t('finance.save_transaction')}
-              </Text>
-            </AppButton>
-          )}
+                <Box flexDirection="row" alignItems="center" gap="s">
+                  <AppIcon
+                    name="hand-holding-dollar"
+                    size={16}
+                    color={colors.primary}
+                  />
+                  <Text variant="body" fontFamily="semiBold">
+                    {t('finance.held_amount')}
+                  </Text>
+                </Box>
+                <Text variant="caption" color="secondaryText">
+                  {t('finance.held_amount_description')}
+                </Text>
+
+                {/* Nhập số tiền giữ hộ */}
+                <AppButton
+                  backgroundColor="card"
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    heldCalculatorSheetRef.current?.expand();
+                  }}
+
+                >
+                  <Box
+                    padding="m"
+                    borderRadius={RADIUS.m}
+                    backgroundColor="main"
+                    alignItems="center"
+                    gap='s'
+                  >
+                    <Text variant="caption" color="secondaryText">
+                      {t('finance.held_amount')}
+                    </Text>
+                    <Text
+                      variant="subheader"
+                      fontSize={24}
+                      color={heldAmount > 0 ? 'primary' : 'secondaryText'}
+                    >
+                      {formatVND(heldAmount)}
+                    </Text>
+                  </Box>
+                </AppButton>
+
+                {/* Chọn ví nhận giữ hộ */}
+                <Box gap="xs">
+                  <Text variant="caption" color="secondaryText">
+                    {t('finance.select_held_wallet')}
+                  </Text>
+                  <Box flexDirection="row" flexWrap="wrap" gap="s">
+                    {availableHeldWallets.map(wallet => {
+                      const isSelected = selectedHeldWallet?.id === wallet.id;
+                      let iconName = 'wallet';
+                      if (wallet.walletType === 'cash') iconName = 'money-bill';
+                      if (wallet.walletType === 'bank')
+                        iconName = 'building-columns';
+                      if (wallet.walletType === 'credit')
+                        iconName = 'credit-card';
+
+                      return (
+                        <TouchableOpacity
+                          key={wallet.id}
+                          onPress={() => setSelectedHeldWallet(wallet)}
+                        >
+                          <Box
+                            paddingVertical="xs"
+                            paddingHorizontal="s"
+                            borderRadius={RADIUS.l}
+                            backgroundColor={isSelected ? 'primary' : 'main'}
+                            flexDirection="row"
+                            alignItems="center"
+                            gap="xs"
+                            borderWidth={1}
+                            borderColor={isSelected ? 'primary' : 'main'}
+                          >
+                            <Box
+                              width={20}
+                              height={20}
+                              borderRadius={10}
+                              backgroundColor={isSelected ? 'white' : 'card'}
+                              alignItems="center"
+                              justifyContent="center"
+                            >
+                              <AppIcon
+                                name={iconName}
+                                size={10}
+                                color={
+                                  isSelected
+                                    ? colors.primary
+                                    : colors.secondaryText
+                                }
+                              />
+                            </Box>
+                            <Text
+                              variant="caption"
+                              fontFamily="semiBold"
+                              color={isSelected ? 'white' : 'text'}
+                            >
+                              {wallet.displayName}
+                            </Text>
+                          </Box>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </Box>
+                </Box>
+
+                {/* Summary */}
+                {heldAmount > 0 && selectedHeldWallet && (
+                  <Box
+                    flexDirection="row"
+                    alignItems="center"
+                    gap="s"
+                    padding="s"
+                    borderRadius={RADIUS.m}
+                    style={{
+                      backgroundColor: colors.primary + '15',
+                    }}
+                  >
+                    <AppIcon
+                      name="circle-info"
+                      size={14}
+                      color={colors.primary}
+                    />
+                    <Text variant="caption" color="primary" flex={1}>
+                      {`${t('finance.held_amount_auto_transfer')} → ${selectedHeldWallet.displayName}: ${formatVND(
+                        heldAmount,
+                      )}`}
+                    </Text>
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {loading ? (
+              <Box alignItems="center" justifyContent="center">
+                <LoadingWithLogo
+                  isComplete={isComplete}
+                  onComplete={handleSaveComplete}
+                />
+              </Box>
+            ) : (
+              <AppButton
+                disabled={
+                  amount <= 0 ||
+                  !selectedWallet ||
+                  (type === 'expense' && !selectedCategory)
+                }
+                onPress={handleSaveTransaction}
+                backgroundColor={type === 'expense' ? 'danger' : 'success'}
+              >
+                <Text
+                  textAlign="center"
+                  variant="subheader"
+                  color="white"
+                  textTransform="uppercase"
+                >
+                  {t('finance.save_transaction')}
+                </Text>
+              </AppButton>
+            )}
+          </Box>
         </Box>
       </AppScrollView>
 
@@ -433,6 +637,20 @@ const TransactionFormEnhanced = ({
       >
         <DateTimePicker onConfirm={handleDateConfirm} initialDate={date} />
       </AppBottomSheet>
+
+      <AppBottomSheet
+        hideIndicator
+        ref={heldCalculatorSheetRef}
+        snapPoints={[320]}
+        hideBackdrop
+        hideContentPadding
+      >
+        <CalculatorKeyboard
+          onValueChange={setHeldAmount}
+          onDone={handleHeldCalculatorDone}
+          initialValue={heldAmount}
+        />
+      </AppBottomSheet>
     </Screen>
   );
 };
@@ -442,8 +660,8 @@ const enhance = withObservables(
   ({ transactionId, userId }: { transactionId?: string; userId: string }) => ({
     transaction: transactionId
       ? database.collections
-          .get<Transaction>('transactions')
-          .findAndObserve(transactionId)
+        .get<Transaction>('transactions')
+        .findAndObserve(transactionId)
       : of(null),
     categories: observeCategories(userId),
     wallets: observeWallets(userId),

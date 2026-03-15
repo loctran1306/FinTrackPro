@@ -21,9 +21,9 @@ const Screen = ({
   const navigation = useNavigation();
   const { colors } = useTheme<Theme>();
   useEffect(() => {
-    // 1. Chặn vuốt Back trên iOS
+    // 1. Bật vuốt từ cạnh trái để Back (iOS/Android)
     navigation.setOptions({
-      gestureEnabled: false,
+      gestureEnabled: true,
     });
 
     // 2. Chặn nút Back/Cử chỉ hệ thống trên Android

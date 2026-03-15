@@ -118,7 +118,7 @@ const QuickTransactionBottomSheet = forwardRef<
         contentContainerStyle={{
           gap: SPACING.s,
           paddingBottom: SPACING.m,
-          paddingHorizontal: 2,
+          paddingHorizontal: SPACING.m,
         }}
         style={{ marginHorizontal: -SPACING.m }}
       >
@@ -159,9 +159,6 @@ const QuickTransactionBottomSheet = forwardRef<
         style={{ borderColor: colors.card }}
         marginBottom="m"
       >
-        <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <AppIcon name="circle-plus" size={22} color="secondaryText" />
-        </TouchableOpacity>
         <BottomSheetTextInput
           value={input}
           onChangeText={setInput}

@@ -188,7 +188,7 @@ const CategoryFormInner = ({ categoryId, category, navigation }: FormProps) => {
           style={{ padding: SPACING.s }}
           shadow={false}
         >
-          <AppIcon name="xmark" size={24} color={colors.text} />
+          <AppIcon name='chevron-left' size={18} color={colors.text} />
         </AppButton>
         <Text variant="subheader">
           {isEdit ? t('finance.edit_category') : t('finance.add_category')}
@@ -426,8 +426,8 @@ const enhance = withObservables(
   ({ categoryId }: { categoryId?: string }) => ({
     category: categoryId
       ? database.collections
-          .get<Category>('categories')
-          .findAndObserve(categoryId)
+        .get<Category>('categories')
+        .findAndObserve(categoryId)
       : of(null),
   }),
 );

@@ -1,12 +1,16 @@
-import { WALLET_TYPES } from '@/constants/wallet';
+import { WALLET_TYPES } from '@/constants/wallet.const';
 
 export type FinanceOverview = {
-  total_assets: number;
-  total_liabilities: number;
-  net_worth: number;
-  monthly_income: number;
-  monthly_expense: number;
-  period: string | number;
+  total_assets: number; // Tổng tiền mặt đang quản lý (Gross Cash)
+  physical_cash: number; // Tiền mặt sẵn sàng chi tiêu (Wallet)
+  net_balance: number; // Số dư an toàn để tiêu xài
+  net_worth: number; // Giá trị tài sản thực (Net Worth)
+  holding_amount: number; // Tiền giữ hộ để đối ứng nợ thẻ
+  total_liabilities: number; // Tổng nợ hiển thị trên sao kê ngân hàng
+  true_debt: number; // Nợ thực tế của cá nhân
+  monthly_income: number; // Tổng thu nhập trong kỳ
+  monthly_expense: number; // Tổng chi phí trong kỳ
+  monthly_surplus: number; // Khả năng tích lũy của tháng
 };
 
 export type WalletType = {

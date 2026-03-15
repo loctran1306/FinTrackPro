@@ -1,7 +1,6 @@
 import { database } from '@/models';
 import Category from '@/models/Category';
 import { syncData } from '@/services/sync/syncDataSupabase';
-import { toast } from '@/utils/toast';
 import { Q } from '@nozbe/watermelondb';
 import { Observable } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';

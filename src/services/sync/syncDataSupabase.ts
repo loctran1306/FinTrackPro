@@ -52,19 +52,14 @@ export async function syncData() {
         return { changes: formattedChanges, timestamp: data.timestamp };
       },
       pushChanges: async ({ changes }) => {
-        // Loại bỏ wallets khỏi push — trigger trên Supabase tự tính balance
-        const changesWithoutWallets = {
-          ...changes,
-          wallets: { created: [], updated: [], deleted: [] },
-        };
+        const rawChanges = changes as any;
 
-        const safeChanges = formatPayloadForSupabase(changesWithoutWallets);
-        const { error } = await supabase.rpc('push_data', {
-          changes: safeChanges,
+        const safeSecond = formatPayloadForSupabase(rawChanges);
+        const { error: err } = await supabase.rpc('push_data', {
+          changes: safeSecond,
         });
-
-        if (error) throw error;
-        console.log('Đẩy lên thành công', safeChanges);
+        if (err) throw err;
+        console.log('Đẩy dữ liệu thành công', safeSecond);
       },
       migrationsEnabledAtVersion: 1,
       sendCreatedAsUpdated: true,

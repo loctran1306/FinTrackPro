@@ -20,17 +20,20 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
+import { TRANSACTION_TYPE } from '@/constants/transaction.const';
 
 type TransactionItemProps = {
   transaction: Transaction;
   category: Category; // Được inject từ withObservables
-  wallet: Wallet; // Được inject từ withObservables
+  wallet: Wallet; // Được inject từ withObservables 
+  amountSign?: '+' | '-'; // Dấu + hoặc - cho số tiền (tùy chọn, mặc định theo type)
 };
 
 const TransactionItem = ({
   transaction,
   category,
   wallet,
+  amountSign,
 }: TransactionItemProps) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -48,15 +51,27 @@ const TransactionItem = ({
   };
 
   const isIncome = transaction.type === 'income';
+  const isTransfer = transaction.type === 'transfer';
   const isSynced = transaction.syncStatus === 'synced';
+
+  const sign =
+    amountSign ??
+    (transaction.type === 'income' ? '+' : transaction.type === 'expense' ? '-' : undefined);
+  const amountStr = sign
+    ? `${sign}${formatVND(transaction.amount)}`
+    : formatVND(transaction.amount);
 
   return (
     <AppSwipeable
       swipeableKey={transaction.id}
       onPress={() =>
-        navigation.navigate('TransactionForm', {
-          transactionId: transaction.id,
-        })
+        isTransfer
+          ? navigation.navigate('WalletTransfer', {
+            transactionId: transaction.id,
+          })
+          : navigation.navigate('TransactionForm', {
+            transactionId: transaction.id,
+          })
       }
       onDelete={handleDelete}
     >
@@ -68,15 +83,29 @@ const TransactionItem = ({
         style={{
           backgroundColor: isIncome
             ? addOpacity(colors.success, 0.1)
-            : 'transparent',
+            : isTransfer
+              ? addOpacity(colors.warning, 0.3)
+              : 'transparent',
         }}
       >
         <Box flexDirection="row" alignItems="center" gap="m" flex={1}>
           <Box style={[styles.iconWrap, { backgroundColor: colors.main }]}>
             <AppIcon
-              name={isIncome ? 'money-bill-trend-up' : category.icon}
+              name={
+                isIncome
+                  ? 'money-bill-trend-up'
+                  : isTransfer
+                    ? 'arrow-right-arrow-left'
+                    : category?.icon ?? 'question'
+              }
               size={20}
-              color={isIncome ? colors.success : category.color}
+              color={
+                isIncome
+                  ? colors.success
+                  : isTransfer
+                    ? colors.primary
+                    : category?.color ?? colors.secondaryText
+              }
             />
           </Box>
           <Box flex={1} gap="xs">
@@ -86,8 +115,12 @@ const TransactionItem = ({
               alignItems="flex-end"
             >
               <Box flexDirection="row" alignItems="center" gap="xs">
-                <Text variant="body" fontFamily="semiBold">
-                  {isIncome ? t('finance.income') : category.name}
+                <Text>
+                  {isIncome
+                    ? t('finance.income')
+                    : isTransfer
+                      ? t('finance.transfer')
+                      : category?.name ?? ''}
                 </Text>
                 {!isSynced && (
                   <AppIcon
@@ -97,7 +130,12 @@ const TransactionItem = ({
                   />
                 )}
               </Box>
-              <Text variant="subheader">{formatVND(transaction.amount)}</Text>
+              <Text
+                variant="subheader"
+                color={isIncome ? 'success' : transaction.type === 'expense' ? 'danger' : 'text'}
+              >
+                {amountStr}
+              </Text>
             </Box>
 
             <Text
@@ -109,18 +147,22 @@ const TransactionItem = ({
               {transaction.note}
             </Text>
 
-            <Box flexDirection="row" justifyContent="space-between">
-              <Text variant="label" color="secondaryText">
-                {formatTime(transaction.date)}
-              </Text>
-              <Text variant="label" color="primary">
-                {wallet.displayName}
-              </Text>
+            <Box flexDirection="row" justifyContent="space-between" alignItems="center">
+              <Box flexDirection="row" gap="s" flex={1}>
+                <Text variant="label" color="secondaryText">
+                  {formatTime(transaction.date)}
+                </Text>
+                {transaction.type !== TRANSACTION_TYPE.TRANSFER && (
+                  <Text variant="label" color="primary">
+                    {wallet.displayName}
+                  </Text>
+                )}
+              </Box>
             </Box>
           </Box>
         </Box>
       </Box>
-    </AppSwipeable>
+    </AppSwipeable >
   );
 };
 

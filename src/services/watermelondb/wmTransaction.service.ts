@@ -3,7 +3,8 @@ import Transaction from '@/models/Transaction';
 import Wallet from '@/models/Wallet';
 import { syncData } from '@/services/sync/syncDataSupabase';
 import { Q } from '@nozbe/watermelondb';
-import { of } from 'rxjs';
+import { combineLatest, of } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
 import { getEndOfMonth, getStartOfMonth } from './helper/wmTime.helper';
 
@@ -29,6 +30,29 @@ export const observeTransactionCount = (userId: string) => {
     .observeCount();
 };
 
+/** Chi tiết giao dịch chuyển khoản (transaction + fromWallet + toWallet) */
+export const observeTransferDetail = (transactionId: string) => {
+  if (!transactionId) return of(null);
+  return database.collections
+    .get<Transaction>('transactions')
+    .findAndObserve(transactionId)
+    .pipe(
+      switchMap(tx => {
+        if (!tx || tx.type !== 'transfer' || !tx.toWalletId) return of(null);
+        return combineLatest([
+          tx.wallet.observe(),
+          tx.toWallet.observe(),
+        ]).pipe(
+          map(([fromWallet, toWallet]) => ({
+            transaction: tx,
+            fromWallet,
+            toWallet,
+          })),
+        );
+      }),
+    );
+};
+
 export const observeTransactionsByCategory = (
   userId: string,
   categoryId: string,
@@ -45,6 +69,31 @@ export const observeTransactionsByCategory = (
       Q.where('type', 'expense'),
       Q.where('date', Q.between(startOfMonth, endOfMonth)),
       Q.where('deleted_at', null),
+    )
+    .observe();
+};
+
+/** Giao dịch liên quan đến ví (từ ví hoặc chuyển vào ví) trong tháng */
+export const observeTransactionsByWallet = (
+  userId: string,
+  walletId: string,
+  month: number,
+  year: number,
+) => {
+  if (!userId || !walletId) return of([]);
+  const startOfMonth = getStartOfMonth(month, year);
+  const endOfMonth = getEndOfMonth(month, year);
+  return database.collections
+    .get<Transaction>('transactions')
+    .query(
+      Q.where('user_id', userId),
+      Q.or(
+        Q.where('wallet_id', walletId),
+        Q.where('to_wallet_id', walletId),
+      ),
+      Q.where('date', Q.between(startOfMonth, endOfMonth)),
+      Q.where('deleted_at', null),
+      Q.sortBy('date', Q.desc),
     )
     .observe();
 };
@@ -170,81 +219,6 @@ export const createTransaction = async (data: {
     console.error('❌ Lỗi khi tạo transaction:', error);
     throw error;
   }
-};
-
-// ============================================================
-// CREATE TRANSFER (local — mirror của transfer_money RPC)
-// ============================================================
-
-export const createTransfer = async (data: {
-  fromWalletId: string;
-  toWalletId: string;
-  amount: number;
-  note?: string;
-  categoryId: string;
-  userId: string;
-  date?: number;
-}) => {
-  // 1. Kiểm tra logic cơ bản
-  if (data.fromWalletId === data.toWalletId) {
-    throw new Error('Ví gửi và ví nhận không được trùng nhau.');
-  }
-  if (data.amount <= 0) {
-    throw new Error('Số tiền chuyển phải lớn hơn 0.');
-  }
-
-  // 2. Lấy thông tin ví
-  const fromWallet = await database
-    .get<Wallet>('wallets')
-    .find(data.fromWalletId);
-  const toWallet = await database.get<Wallet>('wallets').find(data.toWalletId);
-
-  // 3. Kiểm tra tồn tại
-  if (!fromWallet) throw new Error('Không tìm thấy ví gửi.');
-  if (!toWallet) throw new Error('Không tìm thấy ví nhận.');
-
-  // 4. Kiểm tra is_active
-  if (!fromWallet.isActive) {
-    throw new Error(
-      `Ví gửi "${fromWallet.displayName}" đã bị ẩn hoặc không còn hoạt động.`,
-    );
-  }
-  if (!toWallet.isActive) {
-    throw new Error(
-      `Ví nhận "${toWallet.displayName}" đã bị ẩn hoặc không còn hoạt động.`,
-    );
-  }
-
-  // 5. Không cho chuyển TỪ thẻ tín dụng
-  if (fromWallet.walletType === 'credit') {
-    throw new Error(
-      'Không thể thực hiện chuyển tiền từ thẻ tín dụng (Credit).',
-    );
-  }
-
-  // 6. Kiểm tra số dư
-  const currentBalance = Number(fromWallet.currentBalance) || 0;
-  if (currentBalance < data.amount) {
-    throw new Error(
-      `Số dư ví "${
-        fromWallet.displayName
-      }" không đủ (Hiện có: ${currentBalance.toLocaleString()}, cần chuyển: ${data.amount.toLocaleString()}).`,
-    );
-  }
-
-  // 7. Tạo transaction transfer
-  return createTransaction({
-    amount: data.amount,
-    note:
-      data.note ??
-      `Chuyển khoản: ${fromWallet.displayName} → ${toWallet.displayName}`,
-    type: 'transfer',
-    date: data.date ?? Date.now(),
-    categoryId: data.categoryId,
-    walletId: data.fromWalletId,
-    toWalletId: data.toWalletId,
-    userId: data.userId,
-  });
 };
 
 // ============================================================

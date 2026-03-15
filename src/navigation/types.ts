@@ -22,11 +22,15 @@ export type RootStackParamList = {
   MainTab: NavigatorScreenParams<MainTabParamList>;
   TransactionForm: { transactionId?: string } | undefined;
   AddWallet: { type: 'cash' | 'bank' | 'credit' };
-  WalletTransfer: undefined;
+  WalletTransfer: { transactionId?: string } | undefined;
   BalanceAdjustment: undefined;
   HistoryTransaction: undefined;
   CategoryDetail: { categoryId: string };
   CategoryForm: { categoryId?: string } | undefined;
+  WalletDetail: { walletId: string };
+  WalletForm: { walletId?: string; type?: 'cash' | 'bank' | 'credit' | 'jar' } | undefined;
+  TransferDetail: { transactionId: string };
+  CreditPayment: { walletId: string };
 };
 
 /** Helper Types */

@@ -40,18 +40,17 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
     '1',
     '2',
     '3',
-    '-', // Thêm Nhân
+    '-',
     '.',
     '0',
     '*',
-    '/', // Dời Trừ và Cộng xuống đây
+    '/',
     'C',
     '',
     '=',
-    'OK', // Thêm nút C (Clear) để xóa sạch nếu gõ sai quá nhiều
+    'OK',
   ];
 
-  // Tính kết quả real-time và gọi onValueChange
   const emitResult = (expression: string) => {
     if (!onValueChange) return;
     if (!expression) {
@@ -62,7 +61,6 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
       const result = evaluate(expression);
       onValueChange(Number(result));
     } catch {
-      // Biểu thức chưa hợp lệ (đang gõ dở) → giữ nguyên giá trị cũ
     }
   };
 
@@ -72,10 +70,9 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
     if (btn === 'DEL') {
       newExpr = expr.slice(0, -1);
     } else if (btn === 'C') {
-      newExpr = ''; // Xóa sạch biểu thức
+      newExpr = '';
     } else if (btn === 'OK') {
       try {
-        // mathjs sẽ tự hiểu dấu * và /
         const result = evaluate(expr || '0');
         onDone(Number(result));
         return;
@@ -93,7 +90,6 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
         newExpr = 'Error';
       }
     } else {
-      // Ngăn không cho nhập 2 toán tử liên tiếp (ví dụ: 100++5)
       const lastChar = expr.slice(-1);
       const operators = ['+', '-', '*', '/'];
       if (operators.includes(btn) && operators.includes(lastChar)) {
@@ -123,7 +119,7 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
     >
       <Box backgroundColor="main" gap="s">
         <Box paddingHorizontal="m">
-          <Text fontSize={24} textAlign="center" color="primary">
+          <Text numberOfLines={1} fontSize={24} textAlign="center" color="primary">
             {formatDisplay(expr) || '0'}
           </Text>
         </Box>
@@ -156,8 +152,8 @@ const CalculatorKeyboard: React.FC<CalculatorKeyboardProps> = ({
                   backgroundColor: isOperator
                     ? colors.highlight
                     : isOK
-                    ? colors.primary
-                    : colors.main,
+                      ? colors.primary
+                      : colors.card,
                   borderRadius: RADIUS.m,
                   padding: 0,
                 }}

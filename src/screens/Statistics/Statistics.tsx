@@ -44,7 +44,6 @@ type Props = {
 };
 
 const Statistics = ({ categories, time }: Props) => {
-  console.log('categories', categories);
 
   const { t, i18n } = useTranslation();
   const navigation =

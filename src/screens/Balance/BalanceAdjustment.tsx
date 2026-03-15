@@ -11,7 +11,6 @@ import {
   convertToDbAmount,
   formatVND,
 } from '@/helpers/currency.helper';
-import { RootStackParamList } from '@/navigation/types';
 import { walletService } from '@/services/wallet/wallet.service';
 import { WalletType } from '@/services/wallet/wallet.type';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -21,19 +20,14 @@ import { Theme } from '@/theme';
 import { Box, Text } from '@/theme/components';
 import { RADIUS, SPACING } from '@/theme/constant';
 import { toast } from '@/utils/toast';
-import { CommonActions } from '@react-navigation/native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '@shopify/restyle';
 import React, { useMemo, useRef, useState } from 'react';
 import { TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { WALLET_TYPES } from '@/constants/wallet';
+import { WALLET_TYPES } from '@/constants/wallet.const';
 
 const BalanceAdjustmentScreen = () => {
   const { t } = useTranslation();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
   const dispatch = useAppDispatch();
   const { creditWallets, paymentWallets } = useAppSelector(selectWallets);
@@ -49,11 +43,6 @@ const BalanceAdjustmentScreen = () => {
     [paymentWallets, creditWallets],
   );
 
-  const handleGoBack = () => {
-    navigation.dispatch(
-      CommonActions.reset({ index: 0, routes: [{ name: 'MainTab' }] }),
-    );
-  };
 
   const handleWalletPress = (wallet: WalletType) => {
     const displayBalance = convertFromDbAmount(wallet.current_balance);
@@ -77,7 +66,6 @@ const BalanceAdjustmentScreen = () => {
             current_balance: dbAmount,
           }),
         );
-        // dispatch(getFinanceOverviewThunk());
         toast.success(t('finance.update_balance_success'));
         calculatorSheetRef.current?.close();
         setSelectedWallet(null);
@@ -171,10 +159,7 @@ const BalanceAdjustmentScreen = () => {
 
   return (
     <Screen padding="none">
-      <AppHeader
-        title={t('finance.update_balance')}
-        backButton={handleGoBack}
-      />
+      <AppHeader title={t('finance.update_balance')} />
       <AppScrollView contentContainerStyle={{ padding: SPACING.m }}>
         <Box marginBottom="m">
           <Text variant="body" color="secondaryText">

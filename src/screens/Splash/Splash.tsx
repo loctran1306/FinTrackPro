@@ -36,7 +36,7 @@ const SplashScreen = () => {
     initApp();
   }, [navigation, dispatch]);
   return (
-    <Screen edges={[]} backgroundColor="highlight">
+    <Screen edges={[]} backgroundColor='highlight'>
       <StatusBar barStyle="dark-content" />
       <View style={styles.background}>
         <View style={styles.blurTopLeft} />

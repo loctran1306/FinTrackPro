@@ -1,13 +1,14 @@
 import AppButton from "@/components/button/AppButton";
 import AppIcon from "@/components/common/AppIcon";
 import { formatVND } from "@/helpers/currency.helper";
+import { formatDayAndDate } from "@/helpers/time.helper";
 import { FinanceOverview } from "@/services/wallet/wallet.type";
 import { observeFinanceOverview } from "@/services/watermelondb/func/wmFinanceOverview";
 import { setHiddenCurrency } from "@/store/global/global.slice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Theme } from "@/theme";
 import { Box, Text } from "@/theme/components";
-import { SPACING } from "@/theme/constant";
+import { RADIUS, SPACING } from "@/theme/constant";
 import withObservables from "@nozbe/with-observables";
 import { useTheme } from "@shopify/restyle";
 import { useTranslation } from "react-i18next";
@@ -20,7 +21,7 @@ type Props = {
 const HomeOverview = ({ financeOverview }: Props) => {
     const { top: topSafeArea } = useSafeAreaInsets();
     const { colors } = useTheme<Theme>();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const dispatch = useAppDispatch();
     const { hiddenCurrency } = useAppSelector(state => state.global);
 
@@ -34,7 +35,12 @@ const HomeOverview = ({ financeOverview }: Props) => {
             gap="l"
             style={{ paddingTop: topSafeArea }}
         >
+
             <Box alignItems="center">
+                <Box padding='s' borderRadius={RADIUS.l} backgroundColor='highlight'>
+
+                    <Text variant="subheader" color='primary'>{formatDayAndDate(undefined, i18n.language as 'vi' | 'en')}</Text>
+                </Box>
                 <AppButton
                     shadow={false}
                     onPress={handleToggleHiddenCurrency}
@@ -47,17 +53,17 @@ const HomeOverview = ({ financeOverview }: Props) => {
                             textTransform="uppercase"
                             letterSpacing={1}
                         >
-                            {t('finance.total_assets')}
+                            {t('finance.physical_cash')}
                         </Text>
                         {!hiddenCurrency ? (
-                            <AppIcon name="eye" size={16} color={colors.primary} />
+                            <AppIcon name="eye" size={16} color={colors.secondaryText} />
                         ) : (
-                            <AppIcon name="eye-slash" size={16} color={colors.primary} />
+                            <AppIcon name="eye-slash" size={16} color={colors.secondaryText} />
                         )}
                     </Box>
                 </AppButton>
                 <Text variant="header">
-                    {formatVND(financeOverview?.total_assets || 0, hiddenCurrency)}
+                    {formatVND(financeOverview?.physical_cash || 0, hiddenCurrency)}
                 </Text>
             </Box>
             <Box
@@ -83,11 +89,12 @@ const HomeOverview = ({ financeOverview }: Props) => {
                 />
                 <Box flex={1} alignItems="center">
                     <Text variant="caption" color="secondaryText">
-                        {t('finance.tracking')}
+                        {t('finance.net_balance')}
                     </Text>
-                    <Text variant="subheader">{formatVND(0)}</Text>
+                    <Text variant="subheader">{formatVND(financeOverview?.net_balance || 0, hiddenCurrency)}</Text>
                 </Box>
             </Box>
+
         </Box>
     );
 };
