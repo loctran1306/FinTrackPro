@@ -36,13 +36,18 @@ class AppDelegate: ExpoAppDelegate {
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
-  func application(
+ override func application(
     _ app: UIApplication,
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-    return GIDSignIn.sharedInstance.handle(url)
-  }
+    // Ưu tiên xử lý Google Sign In trước
+    if GIDSignIn.sharedInstance.handle(url) {
+      return true
+    }
+    // Trả về cho Expo xử lý các link khác
+    return super.application(app, open: url, options: options)
+  }     
 }
 
 class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {

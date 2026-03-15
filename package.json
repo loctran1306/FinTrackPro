@@ -10,6 +10,8 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
+    "ota": "eas update --branch production --message",
+    "ota:auto": "eas update --branch production --auto",
     "release:android": "react-native run-android --mode=release",
     "release:ios": "react-native run-ios --mode Release"
   },
