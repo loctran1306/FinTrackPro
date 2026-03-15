@@ -16,6 +16,7 @@ import {
 } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
 
+import * as Updates from 'expo-updates';
 import { navigationRef } from '@/navigation/navigationRef';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { RootNavigator } from '@navigation/RootNavigator';
@@ -43,6 +44,26 @@ const AppContent = () => {
   const themeMode = useAppSelector(state => state.global.theme);
   const { session } = useAppSelector(state => state.auth);
   const dispatch = useAppDispatch();
+
+  // OTA
+  useEffect(() => {
+    async function onFetchUpdateAsync() {
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          await Updates.reloadAsync(); // Tự động khởi động lại app để áp dụng code mới
+        }
+      } catch (error) {
+        console.log(`Error fetching latest Expo update: ${error}`);
+      }
+    }
+
+    if (!__DEV__) { // Chỉ chạy khi app là bản Release (ipa)
+      onFetchUpdateAsync();
+    }
+  }, []);
+
 
   // Realtime wallets - chạy ở App level để không bị unmount khi navigate (tránh lỗi đăng ký lại)
   useWalletsRealtime(session?.user?.id);
