@@ -161,7 +161,7 @@ export const ProfileScreen = () => {
               <AppIcon
                 name="arrow-right-from-bracket"
                 size={24}
-                color={colors.primary}
+                color={colors.danger}
               />
             </Pressable>
           </Box>
@@ -202,22 +202,22 @@ export const ProfileScreen = () => {
           <SettingCard
             icon="bullseye"
             title={t('profile.budgeting_goals')}
-            onPress={() => {}}
+            onPress={() => { }}
           />
           <SettingCard
             icon="arrows-rotate"
             title={t('profile.recurring_transactions')}
-            onPress={() => {}}
+            onPress={() => { }}
           />
           <SettingCard
             icon="file-export"
             title={t('profile.export_data')}
-            onPress={() => {}}
+            onPress={() => { }}
           />
           <SettingCard
             icon="globe"
             title={t('profile.currency_settings')}
-            onPress={() => {}}
+            onPress={() => { }}
           />
 
           <SettingCard
@@ -256,7 +256,7 @@ export const ProfileScreen = () => {
           <SettingCard
             icon="user"
             title={t('profile.account_info')}
-            onPress={() => {}}
+            onPress={() => { }}
           />
           <SettingCard
             icon="bell"
@@ -273,7 +273,7 @@ export const ProfileScreen = () => {
           <SettingCard
             icon="lock"
             title={t('profile.security')}
-            onPress={() => {}}
+            onPress={() => { }}
           />
           <SettingCard
             icon="cloud"
@@ -294,7 +294,7 @@ export const ProfileScreen = () => {
       <AppBottomSheet
         ref={themeSheetRef}
         snapPoints={['35%']}
-        onClose={() => {}}
+        onClose={() => { }}
         isScrollable={false}
       >
         <Text variant="subheader" marginBottom="m">
@@ -330,7 +330,7 @@ export const ProfileScreen = () => {
       <AppBottomSheet
         ref={languageSheetRef}
         snapPoints={['30%']}
-        onClose={() => {}}
+        onClose={() => { }}
         isScrollable={false}
       >
         <Text variant="subheader" marginBottom="m">
