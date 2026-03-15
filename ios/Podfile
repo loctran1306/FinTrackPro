@@ -1,3 +1,4 @@
+require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 # Resolve react_native_pods.rb with node to allow for hoisting
 require Pod::Executable.execute_command('node', ['-p',
   'require.resolve(
@@ -15,7 +16,11 @@ if linkage != nil
 end
 
 target 'FinTrackPro' do
-  config = use_native_modules!
+  use_expo_modules!
+
+  # Dùng @react-native-community/cli để autolink (tránh lỗi expo-modules-autolinking + react-native-config)
+  config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
+  config = use_native_modules!(config_command)
 
   use_react_native!(
     :path => config[:reactNativePath],

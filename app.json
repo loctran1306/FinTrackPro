@@ -1,4 +1,16 @@
 {
   "name": "FinTrackPro",
-  "displayName": "FinTrackPro"
+  "displayName": "FinTrackPro",
+  "extra": {
+    "eas": {
+      "projectId": "5d4e9e97-57f5-45ac-bd59-42a2c0183247"
+    }
+  },
+  "owner": "tranthanhloc1306",
+  "runtimeVersion": "1.0.0",
+  "updates": {
+    "url": "https://u.expo.dev/5d4e9e97-57f5-45ac-bd59-42a2c0183247"
+  },
+  "android": {},
+  "ios": {}
 }

@@ -85,3 +85,8 @@ yarn-error.log
 # Firebase / Google Services
 ios/GoogleService-Info.plist
 android/app/google-services.json
+
+# Expo
+.expo
+dist/
+web-build/
