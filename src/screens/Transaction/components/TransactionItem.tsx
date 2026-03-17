@@ -2,7 +2,10 @@ import withObservables from '@nozbe/with-observables';
 import Transaction from '@/models/Transaction';
 import Category from '@/models/Category';
 import Wallet from '@/models/Wallet';
-import { deleteTransaction } from '@/services/watermelondb/wmTransaction.service'; // Hàm delete đã viết
+import {
+  deleteTransaction,
+  restoreTransaction,
+} from '@/services/watermelondb/wmTransaction.service'; // Hàm delete đã viết
 
 // Giữ lại các UI components cũ của Lộc
 import AppIcon from '@/components/common/AppIcon';
@@ -24,13 +27,15 @@ import { TRANSACTION_TYPE } from '@/constants/transaction.const';
 
 type TransactionItemProps = {
   transaction: Transaction;
+  rightIconType?: 'delete' | 'restore';
   category: Category; // Được inject từ withObservables
-  wallet: Wallet; // Được inject từ withObservables 
+  wallet: Wallet; // Được inject từ withObservables
   amountSign?: '+' | '-'; // Dấu + hoặc - cho số tiền (tùy chọn, mặc định theo type)
 };
 
 const TransactionItem = ({
   transaction,
+  rightIconType = 'delete',
   category,
   wallet,
   amountSign,
@@ -50,13 +55,27 @@ const TransactionItem = ({
     }
   };
 
+  const handleRestore = async (reset: () => void) => {
+    try {
+      await restoreTransaction(transaction);
+      toast.success(t('finance.restore_transaction_success'));
+    } catch {
+      toast.error(t('finance.restore_transaction_error'));
+      reset();
+    }
+  };
+
   const isIncome = transaction.type === 'income';
   const isTransfer = transaction.type === 'transfer';
   const isSynced = transaction.syncStatus === 'synced';
 
   const sign =
     amountSign ??
-    (transaction.type === 'income' ? '+' : transaction.type === 'expense' ? '-' : undefined);
+    (transaction.type === 'income'
+      ? '+'
+      : transaction.type === 'expense'
+      ? '-'
+      : undefined);
   const amountStr = sign
     ? `${sign}${formatVND(transaction.amount)}`
     : formatVND(transaction.amount);
@@ -67,13 +86,15 @@ const TransactionItem = ({
       onPress={() =>
         isTransfer
           ? navigation.navigate('WalletTransfer', {
-            transactionId: transaction.id,
-          })
+              transactionId: transaction.id,
+            })
           : navigation.navigate('TransactionForm', {
-            transactionId: transaction.id,
-          })
+              transactionId: transaction.id,
+            })
       }
       onDelete={handleDelete}
+      onRestore={handleRestore}
+      typeRightIcon={rightIconType}
     >
       <Box
         flexDirection="row"
@@ -84,8 +105,8 @@ const TransactionItem = ({
           backgroundColor: isIncome
             ? addOpacity(colors.success, 0.1)
             : isTransfer
-              ? addOpacity(colors.warning, 0.3)
-              : 'transparent',
+            ? addOpacity(colors.warning, 0.3)
+            : 'transparent',
         }}
       >
         <Box flexDirection="row" alignItems="center" gap="m" flex={1}>
@@ -95,16 +116,16 @@ const TransactionItem = ({
                 isIncome
                   ? 'money-bill-trend-up'
                   : isTransfer
-                    ? 'arrow-right-arrow-left'
-                    : category?.icon ?? 'question'
+                  ? 'arrow-right-arrow-left'
+                  : category?.icon ?? 'question'
               }
               size={20}
               color={
                 isIncome
                   ? colors.success
                   : isTransfer
-                    ? colors.primary
-                    : category?.color ?? colors.secondaryText
+                  ? colors.primary
+                  : category?.color ?? colors.secondaryText
               }
             />
           </Box>
@@ -119,8 +140,8 @@ const TransactionItem = ({
                   {isIncome
                     ? t('finance.income')
                     : isTransfer
-                      ? t('finance.transfer')
-                      : category?.name ?? ''}
+                    ? t('finance.transfer')
+                    : category?.name ?? ''}
                 </Text>
                 {!isSynced && (
                   <AppIcon
@@ -132,7 +153,13 @@ const TransactionItem = ({
               </Box>
               <Text
                 variant="subheader"
-                color={isIncome ? 'success' : transaction.type === 'expense' ? 'danger' : 'text'}
+                color={
+                  isIncome
+                    ? 'success'
+                    : transaction.type === 'expense'
+                    ? 'danger'
+                    : 'text'
+                }
               >
                 {amountStr}
               </Text>
@@ -147,7 +174,11 @@ const TransactionItem = ({
               {transaction.note}
             </Text>
 
-            <Box flexDirection="row" justifyContent="space-between" alignItems="center">
+            <Box
+              flexDirection="row"
+              justifyContent="space-between"
+              alignItems="center"
+            >
               <Box flexDirection="row" gap="s" flex={1}>
                 <Text variant="label" color="secondaryText">
                   {formatTime(transaction.date)}
@@ -162,7 +193,7 @@ const TransactionItem = ({
           </Box>
         </Box>
       </Box>
-    </AppSwipeable >
+    </AppSwipeable>
   );
 };
 

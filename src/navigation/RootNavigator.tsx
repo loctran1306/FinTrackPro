@@ -21,6 +21,7 @@ import WalletTransferScreen from '@/screens/Wallet/WalletTransfer';
 import { useTheme } from '@shopify/restyle';
 import SplashScreen from '../screens/Splash/Splash';
 import TransactionForm from '../screens/Transaction/TransactionForm';
+import DeletedRecentlyScreen from '@/screens/Transaction/DeletedRecently';
 import AddWalletScreen from '../screens/Wallet/AddWallet';
 import { MainTabNavigator } from './MainTabNavigator';
 import { RootStackParamList } from './types';
@@ -74,6 +75,7 @@ export const RootNavigator = ({ isDarkMode = false }: RootNavigatorProps) => {
         <Stack.Screen name="WalletDetail" component={WalletDetailScreen} />
         <Stack.Screen name="WalletForm" component={WalletFormScreen} />
         <Stack.Screen name="CreditPayment" component={CreditPaymentScreen} />
+        <Stack.Screen name="DeletedRecently" component={DeletedRecentlyScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

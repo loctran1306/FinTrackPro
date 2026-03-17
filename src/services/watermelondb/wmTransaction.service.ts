@@ -3,10 +3,60 @@ import Transaction from '@/models/Transaction';
 import Wallet from '@/models/Wallet';
 import { syncData } from '@/services/sync/syncDataSupabase';
 import { Q } from '@nozbe/watermelondb';
+import type { Clause } from '@nozbe/watermelondb/QueryDescription';
 import { combineLatest, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
 import { getEndOfMonth, getStartOfMonth } from './helper/wmTime.helper';
+
+// ============================================================
+// FILTER TYPES
+// ============================================================
+
+export interface TransactionFilter {
+  types?: string[] | null;    // ['expense', 'income', 'transfer']
+  walletId?: string | null;
+  categoryId?: string | null;
+  dateFrom?: number | null;   // timestamp
+  dateTo?: number | null;     // timestamp
+}
+
+const buildFilterClauses = (
+  userId: string,
+  filter?: TransactionFilter,
+): Clause[] => {
+  const clauses: Clause[] = [
+    Q.where('user_id', userId),
+    Q.where('deleted_at', null),
+  ];
+
+  if (filter?.types && filter.types.length > 0) {
+    clauses.push(Q.where('type', Q.oneOf(filter.types)));
+  }
+
+  if (filter?.walletId) {
+    clauses.push(
+      Q.or(
+        Q.where('wallet_id', filter.walletId),
+        Q.where('to_wallet_id', filter.walletId),
+      ),
+    );
+  }
+
+  if (filter?.categoryId) {
+    clauses.push(Q.where('category_id', filter.categoryId));
+  }
+
+  if (filter?.dateFrom && filter?.dateTo) {
+    clauses.push(Q.where('date', Q.between(filter.dateFrom, filter.dateTo)));
+  } else if (filter?.dateFrom) {
+    clauses.push(Q.where('date', Q.gte(filter.dateFrom)));
+  } else if (filter?.dateTo) {
+    clauses.push(Q.where('date', Q.lte(filter.dateTo)));
+  }
+
+  return clauses;
+};
 
 export const observeTransactions = (userId: string, takeCount: number) => {
   if (!userId) return of([]);
@@ -27,6 +77,35 @@ export const observeTransactionCount = (userId: string) => {
   return database.collections
     .get<Transaction>('transactions')
     .query(Q.where('user_id', userId), Q.where('deleted_at', null))
+    .observeCount();
+};
+
+// ============================================================
+// FILTERED OBSERVABLES (dùng cho màn hình lịch sử giao dịch)
+// ============================================================
+
+export const observeFilteredTransactions = (
+  userId: string,
+  takeCount: number,
+  filter?: TransactionFilter,
+) => {
+  if (!userId) return of([]);
+  const clauses = buildFilterClauses(userId, filter);
+  return database.collections
+    .get<Transaction>('transactions')
+    .query(...clauses, Q.sortBy('date', Q.desc), Q.take(takeCount))
+    .observe();
+};
+
+export const observeFilteredTransactionCount = (
+  userId: string,
+  filter?: TransactionFilter,
+) => {
+  if (!userId) return of(0);
+  const clauses = buildFilterClauses(userId, filter);
+  return database.collections
+    .get<Transaction>('transactions')
+    .query(...clauses)
     .observeCount();
 };
 
@@ -405,8 +484,10 @@ export const deleteTransaction = async (transaction: Transaction) => {
         }
       }
 
-      // 3. Soft delete transaction
-      const markedTransaction = transaction.prepareMarkAsDeleted();
+      // 3. Đánh dấu xóa bằng field deletedAt (local trash bin)
+      const markedTransaction = transaction.prepareUpdate(t => {
+        t.deletedAt = Date.now();
+      });
       recordsToBatch.push(markedTransaction);
 
       // 4. Thực thi batch
@@ -425,55 +506,78 @@ export const deleteTransaction = async (transaction: Transaction) => {
 // DELETE PERMANENTLY
 // ============================================================
 
-export const deleteTransactionPermanently = async (transactionId: string) => {
+export const deleteTransactionPermanently = async (transaction: Transaction) => {
   try {
-    const transaction = await database
-      .get<Transaction>('transactions')
-      .find(transactionId);
-    if (!transaction) throw new Error('Không tìm thấy giao dịch');
+    await database.write(async writer => {
+      // Vì số dư đã được hoàn lại khi move vào trash bin (soft delete),
+      // nên ở đây chỉ cần gọi prepareMarkAsDeleted để sync-delete vĩnh viễn
+      const transactionDelete = transaction.prepareMarkAsDeleted();
+      await writer.batch(transactionDelete);
+    });
 
+    console.log('✅ Đã xóa vĩnh viễn giao dịch thành công');
+    syncData().catch(console.error);
+  } catch (error) {
+    console.error('❌ Lỗi khi xóa vĩnh viễn:', error);
+  }
+};
+
+export const restoreTransaction = async (transaction: Transaction) => {
+  try {
     const amount = Number(transaction.amount) || 0;
     const type = transaction.type as 'expense' | 'income' | 'transfer';
 
     await database.write(async writer => {
       const recordsToBatch: any[] = [];
 
-      // 1. Hoàn tác ví gửi (from)
+      // 1. Tìm và cập nhật ví gửi (from)
       const wallet = await database
         .get<Wallet>('wallets')
         .find(transaction.walletId);
       if (wallet) {
-        const revertWallet = wallet.prepareUpdate(w => {
-          revertBalance(w, amount, type, 'from');
+        const updateWallet = wallet.prepareUpdate(w => {
+          applyBalance(w, amount, type, 'from');
         });
-        recordsToBatch.push(revertWallet);
+        recordsToBatch.push(updateWallet);
       }
 
-      // 2. Nếu transfer → hoàn tác ví nhận (to)
+      // 2. Nếu transfer → cập nhật ví nhận (to)
       if (type === 'transfer' && transaction.toWalletId) {
         const toWallet = await database
           .get<Wallet>('wallets')
           .find(transaction.toWalletId);
         if (toWallet) {
-          const revertToWallet = toWallet.prepareUpdate(w => {
-            revertBalance(w, amount, 'transfer', 'to');
+          const updateToWallet = toWallet.prepareUpdate(w => {
+            applyBalance(w, amount, 'transfer', 'to');
           });
-          recordsToBatch.push(revertToWallet);
+          recordsToBatch.push(updateToWallet);
         }
       }
 
-      // 3. Xóa vĩnh viễn
-      const transactionDelete = transaction.prepareDestroyPermanently();
-      recordsToBatch.push(transactionDelete);
+      // 3. Khôi phục transaction (set deletedAt = null)
+      const restoredTransaction = transaction.prepareUpdate(t => {
+        t.deletedAt = null;
+      });
+      recordsToBatch.push(restoredTransaction);
 
-      // 4. Thực thi batch
       await writer.batch(...recordsToBatch);
     });
 
-    console.log('✅ Đã xóa vĩnh viễn và hoàn tác số dư ví thành công');
-    // 5. Sync sau khi write xong
+    console.log('✅ Khôi phục giao dịch thành công!');
     syncData().catch(console.error);
   } catch (error) {
-    console.error('❌ Lỗi khi xóa vĩnh viễn:', error);
+    console.error('❌ Lỗi khi khôi phục giao dịch:', error);
   }
+};
+
+export const observeDeletedTransactions = (userId: string) => {
+  if (!userId) return of([]);
+  return database.collections
+    .get<Transaction>('transactions')
+    .query(
+      Q.where('user_id', userId),
+      Q.where('deleted_at', Q.notEq(null)),
+      Q.sortBy('deleted_at', Q.desc),
+    )
+    .observe();
 };

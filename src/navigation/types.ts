@@ -31,6 +31,7 @@ export type RootStackParamList = {
   WalletForm: { walletId?: string; type?: 'cash' | 'bank' | 'credit' | 'jar' } | undefined;
   TransferDetail: { transactionId: string };
   CreditPayment: { walletId: string };
+  DeletedRecently: undefined;
 };
 
 /** Helper Types */

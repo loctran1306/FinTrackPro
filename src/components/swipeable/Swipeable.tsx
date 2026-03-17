@@ -23,7 +23,9 @@ type AppSwipeableProps = {
   swipeableKey: string;
   children: React.ReactNode;
   onPress: () => void;
-  onDelete: (reset: () => void) => void;
+  onDelete?: (reset: () => void) => void;
+  onRestore?: (reset: () => void) => void;
+  typeRightIcon?: 'delete' | 'restore';
   style?: StyleProp<ViewStyle>;
   backgroundColor?: keyof Theme['colors'];
 };
@@ -37,6 +39,8 @@ const AppSwipeable = ({
   children,
   onPress,
   onDelete,
+  onRestore,
+  typeRightIcon = 'delete',
   style,
 }: AppSwipeableProps) => {
   const { colors } = useTheme<Theme>();
@@ -53,15 +57,17 @@ const AppSwipeable = ({
   const RightAction = ({
     progress,
     handlePress,
+    typeRightIcon,
   }: {
     progress: SharedValue<number>;
     handlePress: () => void;
+    typeRightIcon: 'delete' | 'restore';
   }) => {
     const animatedTrashStyle = useAnimatedStyle(() => ({
       backgroundColor: interpolateColor(
         progress.value,
         [0, 1],
-        [colors.main, COLORS.red],
+        [colors.main, typeRightIcon === 'delete' ? COLORS.red : COLORS.green],
       ),
       borderRadius: SPACING.m,
       padding: SPACING.s,
@@ -101,7 +107,11 @@ const AppSwipeable = ({
           height="100%"
         >
           <Animated.View style={animatedTrashStyle}>
-            <AppIcon name="trash" size={20} color={COLORS.white} />
+            <AppIcon
+              name={typeRightIcon === 'delete' ? 'trash' : 'trash-arrow-up'}
+              size={20}
+              color={COLORS.white}
+            />
           </Animated.View>
         </Box>
       </AppButton>
@@ -124,17 +134,27 @@ const AppSwipeable = ({
   };
 
   const confirmDelete = () => {
+    if (!onDelete) return;
     onDelete(reset);
   };
 
-  const handleDeletePress = () => {
+  const confirmRestore = () => {
+    if (!onRestore) return;
+    onRestore(reset);
+  };
+
+  const handleRightActionPress = () => {
     ReactNativeHapticFeedback.trigger('impactMedium', hapticOptions);
     originalHeight.value = height.value;
     scale.value = withTiming(0.95);
     height.value = withTiming(0, { duration: 180 });
     opacity.value = withTiming(0, { duration: 180 }, finished => {
       if (finished) {
-        runOnJS(confirmDelete)();
+        if (typeRightIcon === 'delete') {
+          runOnJS(confirmDelete)();
+        } else {
+          runOnJS(confirmRestore)();
+        }
       }
     });
   };
@@ -152,7 +172,11 @@ const AppSwipeable = ({
         ref={swipeableRef}
         key={swipeableKey}
         renderRightActions={progress => (
-          <RightAction progress={progress} handlePress={handleDeletePress} />
+          <RightAction
+            progress={progress}
+            handlePress={handleRightActionPress}
+            typeRightIcon={typeRightIcon}
+          />
         )}
         friction={2}
         rightThreshold={40}

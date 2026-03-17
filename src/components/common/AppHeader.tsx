@@ -10,21 +10,25 @@ import { useNavigation } from '@react-navigation/native';
 type AppHeaderProps = {
   title: string;
   backButton?: () => void;
+  rightButton?: React.ReactNode;
 };
 
-const AppHeader = ({ title, backButton }: AppHeaderProps) => {
+const AppHeader = ({ title, backButton, rightButton }: AppHeaderProps) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors } = useTheme<Theme>();
   return (
     <Box paddingHorizontal="m" flexDirection="row" alignItems="center" gap="m">
-      <AppButton
-        shadow={false}
-        onPress={backButton ? backButton : () => navigation.goBack()}
-      >
-        <AppIcon name="chevron-left" size={18} color={colors.primary} />
-      </AppButton>
-      <Text variant="header">{title}</Text>
+      <Box flexDirection="row" flex={1} alignItems="center">
+        <AppButton
+          shadow={false}
+          onPress={backButton ? backButton : () => navigation.goBack()}
+        >
+          <AppIcon name="chevron-left" size={18} color={colors.primary} />
+        </AppButton>
+        <Text variant="header">{title}</Text>
+      </Box>
+      {rightButton && rightButton}
     </Box>
   );
 };

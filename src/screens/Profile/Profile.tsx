@@ -131,7 +131,14 @@ export const ProfileScreen = () => {
           {title}
         </Text>
       </Box>
-      {right ?? (onPress && <AppIcon name="chevron-right" size={20} color={colors.secondaryText} />)}
+      {right ??
+        (onPress && (
+          <AppIcon
+            name="chevron-right"
+            size={20}
+            color={colors.secondaryText}
+          />
+        ))}
     </Pressable>
   );
 
@@ -151,12 +158,7 @@ export const ProfileScreen = () => {
           alignItems="center"
           position="relative"
         >
-          <Box
-            position="absolute"
-            top={topInset}
-            right={SPACING.m}
-            zIndex={1}
-          >
+          <Box position="absolute" top={topInset} right={SPACING.m} zIndex={1}>
             <Pressable onPress={handleLogout} hitSlop={12}>
               <AppIcon
                 name="arrow-right-from-bracket"
@@ -200,24 +202,24 @@ export const ProfileScreen = () => {
           paddingBottom="xl"
         >
           <SettingCard
-            icon="bullseye"
-            title={t('profile.budgeting_goals')}
-            onPress={() => { }}
+            icon="trash"
+            title={t('profile.deleted_recently')}
+            onPress={() => navigation.navigate('DeletedRecently')}
           />
           <SettingCard
             icon="arrows-rotate"
             title={t('profile.recurring_transactions')}
-            onPress={() => { }}
+            onPress={() => {}}
           />
           <SettingCard
             icon="file-export"
             title={t('profile.export_data')}
-            onPress={() => { }}
+            onPress={() => {}}
           />
           <SettingCard
             icon="globe"
             title={t('profile.currency_settings')}
-            onPress={() => { }}
+            onPress={() => {}}
           />
 
           <SettingCard
@@ -230,10 +232,14 @@ export const ProfileScreen = () => {
                   {themeMode === 'system'
                     ? t('profile.theme_system')
                     : themeMode === 'light'
-                      ? t('profile.theme_light')
-                      : t('profile.theme_dark')}
+                    ? t('profile.theme_light')
+                    : t('profile.theme_dark')}
                 </Text>
-                <AppIcon name="chevron-right" size={16} color={colors.secondaryText} />
+                <AppIcon
+                  name="chevron-right"
+                  size={16}
+                  color={colors.secondaryText}
+                />
               </Box>
             }
           />
@@ -248,7 +254,11 @@ export const ProfileScreen = () => {
                     ? t('profile.language_vi')
                     : t('profile.language_en')}
                 </Text>
-                <AppIcon name="chevron-right" size={16} color={colors.secondaryText} />
+                <AppIcon
+                  name="chevron-right"
+                  size={16}
+                  color={colors.secondaryText}
+                />
               </Box>
             }
           />
@@ -256,7 +266,7 @@ export const ProfileScreen = () => {
           <SettingCard
             icon="user"
             title={t('profile.account_info')}
-            onPress={() => { }}
+            onPress={() => {}}
           />
           <SettingCard
             icon="bell"
@@ -273,7 +283,7 @@ export const ProfileScreen = () => {
           <SettingCard
             icon="lock"
             title={t('profile.security')}
-            onPress={() => { }}
+            onPress={() => {}}
           />
           <SettingCard
             icon="cloud"
@@ -294,7 +304,7 @@ export const ProfileScreen = () => {
       <AppBottomSheet
         ref={themeSheetRef}
         snapPoints={['35%']}
-        onClose={() => { }}
+        onClose={() => {}}
         isScrollable={false}
       >
         <Text variant="subheader" marginBottom="m">
@@ -307,7 +317,12 @@ export const ProfileScreen = () => {
               key={mode}
               onPress={() => handleThemeChange(mode)}
               shadow={false}
-              style={[styles.optionBtn, isActive && { backgroundColor: addOpacity(colors.primary, 0.15) }]}
+              style={[
+                styles.optionBtn,
+                isActive && {
+                  backgroundColor: addOpacity(colors.primary, 0.15),
+                },
+              ]}
             >
               <Text
                 variant="body"
@@ -317,10 +332,12 @@ export const ProfileScreen = () => {
                 {mode === 'system'
                   ? t('profile.theme_system')
                   : mode === 'light'
-                    ? t('profile.theme_light')
-                    : t('profile.theme_dark')}
+                  ? t('profile.theme_light')
+                  : t('profile.theme_dark')}
               </Text>
-              {isActive && <AppIcon name="check" size={20} color={colors.primary} />}
+              {isActive && (
+                <AppIcon name="check" size={20} color={colors.primary} />
+              )}
             </AppButton>
           );
         })}
@@ -330,7 +347,7 @@ export const ProfileScreen = () => {
       <AppBottomSheet
         ref={languageSheetRef}
         snapPoints={['30%']}
-        onClose={() => { }}
+        onClose={() => {}}
         isScrollable={false}
       >
         <Text variant="subheader" marginBottom="m">
@@ -341,7 +358,9 @@ export const ProfileScreen = () => {
           shadow={false}
           style={[
             styles.optionBtn,
-            i18n.language === 'vi' && { backgroundColor: addOpacity(colors.primary, 0.15) },
+            i18n.language === 'vi' && {
+              backgroundColor: addOpacity(colors.primary, 0.15),
+            },
           ]}
         >
           <Text
@@ -351,14 +370,18 @@ export const ProfileScreen = () => {
           >
             {t('profile.language_vi')}
           </Text>
-          {i18n.language === 'vi' && <AppIcon name="check" size={20} color={colors.primary} />}
+          {i18n.language === 'vi' && (
+            <AppIcon name="check" size={20} color={colors.primary} />
+          )}
         </AppButton>
         <AppButton
           onPress={() => switchLanguage('en')}
           shadow={false}
           style={[
             styles.optionBtn,
-            i18n.language === 'en' && { backgroundColor: addOpacity(colors.primary, 0.15) },
+            i18n.language === 'en' && {
+              backgroundColor: addOpacity(colors.primary, 0.15),
+            },
           ]}
         >
           <Text
@@ -368,7 +391,9 @@ export const ProfileScreen = () => {
           >
             {t('profile.language_en')}
           </Text>
-          {i18n.language === 'en' && <AppIcon name="check" size={20} color={colors.primary} />}
+          {i18n.language === 'en' && (
+            <AppIcon name="check" size={20} color={colors.primary} />
+          )}
         </AppButton>
       </AppBottomSheet>
     </Screen>

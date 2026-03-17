@@ -1,8 +1,7 @@
-import { StyleSheet } from 'react-native';
-import AppButton from './AppButton';
+import { Theme } from '@/theme';
 import { BUTTON_ICON_SIZE, RADIUS } from '@/theme/constant';
 import { useTheme } from '@shopify/restyle';
-import { Theme } from '@/theme';
+import AppButton from './AppButton';
 
 type ButtonIconProps = {
   icon: React.ReactNode;
@@ -25,7 +24,6 @@ const ButtonIcon = ({
     <AppButton
       onPress={onPress}
       style={[
-        styles.actionButton,
         {
           minWidth: buttonSize,
           minHeight: buttonSize,
@@ -42,15 +40,3 @@ const ButtonIcon = ({
 };
 
 export default ButtonIcon;
-
-const styles = StyleSheet.create({
-  actionButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    shadowOpacity: 0.08,
-    elevation: 4,
-  },
-});
