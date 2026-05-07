@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextInput, TextInputProps, StyleSheet } from 'react-native';
+import { TextInput, TextInputProps, StyleSheet, KeyboardTypeOptions } from 'react-native';
 import { Box, Text } from '@/theme/components';
 import { TEXT_VARIANTS, Theme } from '@/theme';
 import { useTheme } from '@shopify/restyle';
@@ -14,6 +14,7 @@ interface AppInputProps extends TextInputProps {
   noBorder?: boolean;
   noMargin?: boolean;
   suffix?: string;
+  type?: KeyboardTypeOptions;
 }
 
 const AppInput = ({
@@ -24,6 +25,7 @@ const AppInput = ({
   noBorder,
   noMargin,
   suffix,
+  type,
   ...props
 }: AppInputProps) => {
   const { colors } = useTheme<Theme>();
@@ -72,6 +74,7 @@ const AppInput = ({
         <TextInput
           style={[styles.input, { color: colors.text, fontSize: 16 }]}
           placeholderTextColor={colors.secondaryText}
+          keyboardType={type}
           {...props}
           onBlur={event => {
             setIsFocused(false);

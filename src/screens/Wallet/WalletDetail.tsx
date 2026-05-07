@@ -6,7 +6,7 @@ import { formatVND } from '@/helpers/currency.helper';
 import { formatDateGroupLabel } from '@/helpers/time.helper';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { RADIUS, SPACING } from '@/theme/constant';
-import { Theme } from '@/theme';
+import { FONTS, Theme } from '@/theme';
 import { Box, Text } from '@theme/components';
 import { useTheme } from '@shopify/restyle';
 import React, { useState } from 'react';
@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import withObservables from '@nozbe/with-observables';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { observeTransactionsByWallet } from '@/services/watermelondb/wmTransaction.service';
+import { observePendingInstallmentAmountByWallet } from '@/services/watermelondb/wmInstallment';
 import { TimeState } from '@/store/global/global.slice';
 import Transaction from '@/models/Transaction';
 import Wallet from '@/models/Wallet';
@@ -34,6 +35,7 @@ type Props = {
   walletId: string;
   wallet: Wallet | null;
   transactions: Transaction[];
+  pendingInstallmentAmount: number;
   time: TimeState;
 };
 
@@ -42,7 +44,14 @@ const getWalletIcon = (type: string) =>
 const getWalletColor = (type: string) =>
   WALLET_TYPE_COLOR[type as keyof typeof WALLET_TYPE_COLOR] ?? '#8E8E93';
 
-const WalletDetail = ({ walletId, wallet, transactions = [], time }: Props) => {
+const WalletDetail = ({
+  walletId,
+  wallet,
+  transactions = [],
+  pendingInstallmentAmount,
+  time,
+}: Props) => {
+  console.log('wallet', wallet);
   const { t, i18n } = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -53,6 +62,10 @@ const WalletDetail = ({ walletId, wallet, transactions = [], time }: Props) => {
   const [monthPickerVisible, setMonthPickerVisible] = useState(false);
 
   const walletColor = wallet ? getWalletColor(wallet.walletType) : '#8E8E93';
+  const currentBalance = Number(wallet?.currentBalance) || 0;
+  const creditLimit = Number(wallet?.creditLimit) || 0;
+  const remainingCreditLimit =
+    creditLimit - (currentBalance + (Number(pendingInstallmentAmount) || 0));
 
   const groupedByDate = transactions.reduce<Record<string, Transaction[]>>(
     (acc, tx) => {
@@ -180,13 +193,57 @@ const WalletDetail = ({ walletId, wallet, transactions = [], time }: Props) => {
             </Box>
             <Box>
               <Text variant="label" color="secondaryText">
-                {t('finance.balance')}
+                {wallet?.walletType === 'credit' ? t('finance.total_spend') : t('finance.balance')}
               </Text>
               <Text variant="header">
-                {formatVND(Number(wallet?.currentBalance) ?? 0, hiddenCurrency)}
+                {formatVND(currentBalance, hiddenCurrency)}
               </Text>
             </Box>
           </Box>
+
+
+
+          {/* Limit Available */}
+          {wallet?.walletType === 'credit' && (
+            <Box
+              marginBottom="m"
+              flexDirection="row"
+              alignItems="center"
+              justifyContent="space-between"
+              padding="m"
+              borderRadius={RADIUS.m}
+              style={{
+                backgroundColor: addOpacity(walletColor, 0.08),
+                borderWidth: 1,
+                borderColor: addOpacity(walletColor, 0.15),
+              }}>
+              <Box flexDirection="row" alignItems="center" gap="s">
+                <Text variant="label">{t('finance.credit_available_limit')}:</Text>
+                <Text variant="body" fontFamily={FONTS.bold}>{formatVND(remainingCreditLimit, hiddenCurrency)}</Text>
+              </Box>
+            </Box>
+          )}
+
+          {/* Total Remaining Amount */}
+          {wallet?.walletType === 'credit' && pendingInstallmentAmount > 0 && (
+            <Box
+              marginBottom="m"
+              flexDirection="row"
+              alignItems="center"
+              justifyContent="space-between"
+              padding="m"
+              borderRadius={RADIUS.m}
+              style={{
+                backgroundColor: addOpacity(walletColor, 0.08),
+                borderWidth: 1,
+                borderColor: addOpacity(walletColor, 0.15),
+              }}>
+              <Box flexDirection="row" alignItems="center" gap="s">
+                <Text variant="label">{t('installment.total_remaining_amount')}:</Text>
+                <Text variant="body" fontFamily={FONTS.bold}>{formatVND(pendingInstallmentAmount, hiddenCurrency)}</Text>
+              </Box>
+            </Box>
+          )}
 
           {/* Month picker */}
           <Box marginBottom="m">
@@ -219,7 +276,6 @@ const WalletDetail = ({ walletId, wallet, transactions = [], time }: Props) => {
               </Box>
             </AppButton>
           </Box>
-
 
           {/* Monthly summary */}
           <Box
@@ -343,6 +399,10 @@ const enhance = withObservables(
       walletId,
       time.month,
       time.year,
+    ),
+    pendingInstallmentAmount: observePendingInstallmentAmountByWallet(
+      userId,
+      walletId,
     ),
   }),
 );

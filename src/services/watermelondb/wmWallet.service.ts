@@ -1,7 +1,9 @@
 import { database } from '@/models';
+import Installment from '@/models/Installment';
+import InstallmentItem from '@/models/InstallmentItem';
 import Wallet from '@/models/Wallet';
 import { syncData } from '@/services/sync/syncDataSupabase';
-import { Observable } from 'rxjs';
+import { Observable, combineLatest, map } from 'rxjs';
 import { Q } from '@nozbe/watermelondb';
 import { v4 as uuidv4 } from 'uuid';
 import { createTransaction } from './wmTransaction.service';
@@ -20,15 +22,71 @@ export const observeWallets = (userId: string): Observable<Wallet[]> => {
     .observeWithColumns(['display_name', 'wallet_type', 'current_balance']);
 };
 
-export const observeCreditWallets = (userId: string): Observable<Wallet[]> => {
-  return database.collections
+export type CreditWalletWithAvailable = Wallet & {
+  pendingInstallmentAmount: number;
+  availableLimit: number;
+};
+
+export const observeCreditWallets = (
+  userId: string,
+): Observable<CreditWalletWithAvailable[]> => {
+  const creditWallets$ = database.collections
     .get<Wallet>('wallets')
     .query(
       Q.where('user_id', userId),
       Q.where('wallet_type', Q.eq('credit')),
       Q.sortBy('current_balance', Q.desc),
     )
-    .observeWithColumns(['display_name', 'wallet_type', 'current_balance']);
+    .observeWithColumns([
+      'display_name',
+      'wallet_type',
+      'current_balance',
+      'credit_limit',
+    ]);
+
+  const installments$ = database.collections
+    .get<Installment>('installments')
+    .query(Q.where('user_id', userId), Q.where('deleted_at', null))
+    .observe();
+
+  const pendingItems$ = database.collections
+    .get<InstallmentItem>('installment_items')
+    .query(Q.where('status', Q.eq('PENDING')))
+    .observeWithColumns(['status', 'amount', 'installment_id']);
+
+  return combineLatest([creditWallets$, installments$, pendingItems$]).pipe(
+    map(([wallets, installments, pendingItems]) => {
+      const installmentWalletMap = new Map<string, string>();
+      installments.forEach(installment => {
+        installmentWalletMap.set(installment.id, installment.walletId);
+      });
+
+      const pendingByWallet = new Map<string, number>();
+      pendingItems.forEach(item => {
+        const walletId = installmentWalletMap.get(item.installmentId);
+        if (!walletId) return;
+
+        const currentPending = pendingByWallet.get(walletId) ?? 0;
+        pendingByWallet.set(
+          walletId,
+          currentPending + (Number(item.amount) || 0),
+        );
+      });
+
+      return wallets.map(wallet => {
+        const creditLimit = Number(wallet.creditLimit) || 0;
+        const currentBalance = Number(wallet.currentBalance) || 0;
+        const pendingInstallmentAmount = pendingByWallet.get(wallet.id) ?? 0;
+        const availableLimit =
+          creditLimit - (currentBalance + pendingInstallmentAmount);
+
+        return Object.assign(wallet, {
+          pendingInstallmentAmount,
+          availableLimit,
+        });
+      });
+    }),
+  );
 };
 
 export const observePaymentWallets = (userId: string): Observable<Wallet[]> => {

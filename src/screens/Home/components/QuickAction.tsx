@@ -65,13 +65,12 @@ const QuickAction = ({ onCreateWallet, onQuickTransaction }: Props) => {
       icon: <AppIcon name="pen-to-square" size={20} color={colors.primary} />,
       onMainPress: onQuickTransaction,
     },
-    // {
-    //   id: 'update',
-    //   label: t('finance.update_balance'),
-    //   icon: <AppIcon name="bolt" size={20} color={colors.primary} />,
-    //   options: [],
-    //   onMainPress: () => rootNavigation.navigate('BalanceAdjustment'),
-    // },
+    {
+      id: 'installment',
+      label: t('finance.installment'),
+      icon: <AppIcon name="hand-holding-dollar" size={20} color={colors.primary} />,
+      onMainPress: () => rootNavigation.navigate('Installments'),
+    },
   ];
 
   return (

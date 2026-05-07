@@ -2,7 +2,7 @@ import { database } from '@/models';
 import Category from '@/models/Category';
 import { syncData } from '@/services/sync/syncDataSupabase';
 import { Q } from '@nozbe/watermelondb';
-import { Observable } from 'rxjs';
+import { map, Observable, of } from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 
 export const observeCategories = (userId: string): Observable<Category[]> => {
@@ -10,6 +10,17 @@ export const observeCategories = (userId: string): Observable<Category[]> => {
     .get<Category>('categories')
     .query(Q.where('user_id', userId), Q.sortBy('name', Q.asc))
     .observeWithColumns(['name', 'icon', 'color']);
+};
+
+export const observeIdCategoryInstallment = (
+  userId: string,
+): Observable<string | null> => {
+  if (!userId) return of(null);
+  return database.collections
+    .get<Category>('categories')
+    .query(Q.where('name', Q.like('%Trả góp%')), Q.where('user_id', userId))
+    .observeWithColumns(['id'])
+    .pipe(map(categories => categories[0]?.id ?? null));
 };
 
 // THÊM DANH MỤC

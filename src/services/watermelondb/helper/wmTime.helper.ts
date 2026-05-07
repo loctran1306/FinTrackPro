@@ -19,7 +19,14 @@ export const getEndOfMonth = (month: number, year: number) => {
 };
 
 // Các trường thời gian cần convert
-const timeFields = ['date', 'created_at', 'updated_at', 'deleted_at'];
+const timeFields = [
+  'date',
+  'created_at',
+  'updated_at',
+  'deleted_at',
+  'start_date',
+  'due_date',
+];
 
 // Các trường UUID — PostgreSQL không chấp nhận "" làm UUID, cần convert thành null
 const uuidFields = ['category_id', 'wallet_id', 'to_wallet_id', 'user_id'];

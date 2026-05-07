@@ -14,7 +14,9 @@ import QuickTransactionBottomSheet, {
 } from '@/components/modals/QuickTransactionBottomSheet';
 import { WALLET_TYPE, WALLET_TYPE_LABEL } from '@/constants/wallet.const';
 import { RootStackParamList } from '@/navigation/types';
-import { syncData } from '@/services/sync/syncDataSupabase';
+import { clearAndPullData, syncData } from '@/services/sync/syncDataSupabase';
+import { autoBillDueInstallmentItems } from '@/services/watermelondb/wmInstallment';
+import { createWallet } from '@/services/watermelondb/wmWallet.service';
 import { getCategoriesThunk } from '@/store/category/category.thunk';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { Theme } from '@/theme';
@@ -29,7 +31,6 @@ import HomeOverview from './components/HomeOverview';
 import HomeTransaction from './components/HomeTransaction';
 import QuickAction from './components/QuickAction';
 import WalletList from './components/WalletList';
-import { createWallet } from '@/services/watermelondb/wmWallet.service';
 
 export const HomeScreen = () => {
   const { t } = useTranslation();
@@ -48,14 +49,18 @@ export const HomeScreen = () => {
     if (!isNetworkConnected) return;
     const startSync = async () => {
       try {
+        if (session?.user?.id) {
+          await autoBillDueInstallmentItems(session.user.id);
+        }
         await syncData();
+        // await clearAndPullData();
       } catch (err) {
         console.log('Đồng bộ thất bại:', err);
       }
     };
 
     startSync();
-  }, []);
+  }, [isNetworkConnected, session?.user?.id]);
 
   const handleGetCategories = async () => {
     dispatch(getCategoriesThunk({ month: time.month, year: time.year }));
@@ -67,6 +72,9 @@ export const HomeScreen = () => {
 
   const handleRefresh = async () => {
     if (!isNetworkConnected) return;
+    if (session?.user?.id) {
+      await autoBillDueInstallmentItems(session.user.id);
+    }
     await syncData();
   };
 

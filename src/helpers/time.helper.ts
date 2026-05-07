@@ -98,3 +98,13 @@ export const formatTime = (date: Date | string | number) => {
     minute: '2-digit',
   });
 };
+
+export const formatDateShort = (date: Date | string | number): string => {
+  if (typeof date === 'string' || typeof date === 'number') {
+    date = new Date(date);
+  }
+  return (date as Date).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+  });
+};

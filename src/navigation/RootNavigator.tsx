@@ -25,6 +25,8 @@ import DeletedRecentlyScreen from '@/screens/Transaction/DeletedRecently';
 import AddWalletScreen from '../screens/Wallet/AddWallet';
 import { MainTabNavigator } from './MainTabNavigator';
 import { RootStackParamList } from './types';
+import InstallmentsScreen from '@/screens/Installments/Installments';
+import InstallmentAddScreen from '@/screens/Installments/InstallmentAdd';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -76,6 +78,8 @@ export const RootNavigator = ({ isDarkMode = false }: RootNavigatorProps) => {
         <Stack.Screen name="WalletForm" component={WalletFormScreen} />
         <Stack.Screen name="CreditPayment" component={CreditPaymentScreen} />
         <Stack.Screen name="DeletedRecently" component={DeletedRecentlyScreen} />
+        <Stack.Screen name="Installments" component={InstallmentsScreen} />
+        <Stack.Screen name="InstallmentAdd" component={InstallmentAddScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
