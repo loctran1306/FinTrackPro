@@ -46,5 +46,35 @@ target 'FinTrackPro' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # fmt 11.0.2's consteval detection is incompatible with Apple Clang 21+.
+    # Patch the header for all consumers; a build flag is overridden by base.h.
+    # Remove this workaround when React Native upgrades its fmt dependency.
+    # https://github.com/react/react-native/issues/55601
+    fmt_header = installer.sandbox.root.join('fmt/include/fmt/base.h')
+    if fmt_header.exist?
+      original = fmt_header.read
+      if original.match?(/^#define FMT_VERSION 110002$/)
+        patched = original.sub(
+          '#elif defined(__apple_build_version__) && __apple_build_version__ < 14000029L',
+          '#elif defined(__apple_build_version__) && (__apple_build_version__ < 14000029L || FMT_CLANG_VERSION >= 2100)'
+        )
+        if patched != original
+          File.chmod(0644, fmt_header)
+          fmt_header.write(patched)
+        end
+      end
+    end
+
+    # Some pod resource targets retain a deployment target below the app minimum.
+    minimum_ios = Gem::Version.new(min_ios_version_supported)
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |build_config|
+        deployment_target = build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+        if deployment_target.nil? || Gem::Version.new(deployment_target) < minimum_ios
+          build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = minimum_ios.to_s
+        end
+      end
+    end
   end
 end
