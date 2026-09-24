@@ -11,34 +11,44 @@ import {
 import { store } from '@/store/store';
 
 // ── Sync lock: WatermelonDB không cho phép 2 synchronize() chạy cùng lúc ──
-let isSyncing = false;
+let syncPromise: Promise<boolean> | null = null;
 let pendingSync = false;
 
-export async function syncData() {
+export function syncData(): Promise<boolean> {
+  if (syncPromise) {
+    pendingSync = true;
+    return syncPromise;
+  }
+  syncPromise = (async () => {
+    try {
+      let succeeded: boolean;
+      do {
+        pendingSync = false;
+        succeeded = await performSync();
+      } while (succeeded && pendingSync);
+      return succeeded;
+    } finally {
+      syncPromise = null;
+    }
+  })();
+  return syncPromise;
+}
+
+async function performSync(): Promise<boolean> {
   // Check flag cho phép sync (dùng cho testing/debug)
   const { isSyncEnabled } = store.getState().global;
   if (!isSyncEnabled) {
     console.log('🛑 Sync is disabled by user/test flag');
     pendingSync = true;
-    return;
+    return false;
   }
-
-  // Check network trước khi sync
-  const netState = await NetInfo.fetch();
-  if (!netState.isConnected) {
-    pendingSync = true; // Đánh dấu để sync khi có mạng lại
-    return;
-  }
-  if (isSyncing) {
-    // Đánh dấu có sync đang chờ
-    pendingSync = true;
-    return;
-  }
-
-  isSyncing = true;
-  pendingSync = false;
 
   try {
+    const netState = await NetInfo.fetch();
+    if (!netState.isConnected) {
+      pendingSync = true;
+      return false;
+    }
     await synchronize({
       database,
       pullChanges: async ({ lastPulledAt }) => {
@@ -64,6 +74,7 @@ export async function syncData() {
       migrationsEnabledAtVersion: 1,
       sendCreatedAsUpdated: true,
     });
+    return true;
   } catch (error: any) {
     // Phân biệt lỗi network thật sự trong quá trình sync
     const isNetworkError =
@@ -79,12 +90,7 @@ export async function syncData() {
     } else {
       console.error('❌ Lỗi đồng bộ hệ thống:', error);
     }
-  } finally {
-    isSyncing = false;
-    // Nếu có sync đang chờ → chạy lại 1 lần nữa
-    if (pendingSync) {
-      syncData().catch(console.error);
-    }
+    return false;
   }
 }
 

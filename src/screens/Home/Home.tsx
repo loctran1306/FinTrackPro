@@ -14,7 +14,7 @@ import QuickTransactionBottomSheet, {
 } from '@/components/modals/QuickTransactionBottomSheet';
 import { WALLET_TYPE, WALLET_TYPE_LABEL } from '@/constants/wallet.const';
 import { RootStackParamList } from '@/navigation/types';
-import { clearAndPullData, syncData } from '@/services/sync/syncDataSupabase';
+import { syncData } from '@/services/sync/syncDataSupabase';
 import { autoBillDueInstallmentItems } from '@/services/watermelondb/wmInstallment';
 import { createWallet } from '@/services/watermelondb/wmWallet.service';
 import { getCategoriesThunk } from '@/store/category/category.thunk';

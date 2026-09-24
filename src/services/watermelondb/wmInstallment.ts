@@ -5,9 +5,9 @@ import InstallmentItem from '@/models/InstallmentItem';
 import Transaction from '@/models/Transaction';
 import Wallet from '@/models/Wallet';
 import { syncData } from '@/services/sync/syncDataSupabase';
-import { Q } from '@nozbe/watermelondb';
+import { Model, Q } from '@nozbe/watermelondb';
 import { Observable, combineLatest, map } from 'rxjs';
-import { v4 as uuidv4 } from 'uuid';
+import { v5 as uuidv5 } from 'uuid';
 
 export type InstallmentWithItems = {
   installment: Installment;
@@ -93,7 +93,9 @@ export const observePendingInstallmentAmountByWallet = (
 
 export const autoBillDueInstallmentItems = async (userId: string) => {
   if (!userId) return;
-  console.log('autoBillDueInstallmentItems');
+  // Pull billed periods (including legacy random transaction IDs) before billing.
+  // Do not bill from stale data when sync is unavailable or fails.
+  if (!(await syncData())) return;
   const now = Date.now();
   const installmentCategory = await database.collections
     .get<Category>('categories')
@@ -109,13 +111,21 @@ export const autoBillDueInstallmentItems = async (userId: string) => {
 
     if (dueItems.length === 0) return;
 
-    const recordsToBatch: any[] = [];
+    const recordsToBatch: Model[] = [];
+    const walletChanges = new Map<Wallet, number>();
+    const billedInstallments = new Map<string, Installment>();
+    const billedItemIds = new Set<string>();
 
     for (const item of dueItems) {
       const installment = await database
         .get<Installment>('installments')
         .find(item.installmentId);
-      if (!installment || installment.userId !== userId) continue;
+      if (
+        !installment ||
+        installment.userId !== userId ||
+        installment.deletedAt
+      )
+        continue;
       if (
         installment.status === 'COMPLETED' ||
         installment.status === 'CANCELLED'
@@ -131,20 +141,44 @@ export const autoBillDueInstallmentItems = async (userId: string) => {
       const amount = Number(item.amount) || 0;
       if (amount <= 0) continue;
 
-      const transaction = database
+      // The same period must have the same transaction ID on every device.
+      const transactionId =
+        item.transactionId ||
+        uuidv5(`fintrackpro:installment-item:${item.id}`, uuidv5.URL);
+      const existingTransactions = await database
         .get<Transaction>('transactions')
-        .prepareCreate(t => {
-          t._raw.id = uuidv4();
-          t.userId = installment.userId;
-          t.categoryId = installmentCategoryId;
-          t.walletId = installment.walletId;
-          t.amount = amount;
-          t.type = 'expense';
-          t.note = `${installment.name} - kỳ ${item.periodNumber}`;
-          t.date = now;
-        });
-      recordsToBatch.push(transaction);
+        .query(Q.where('id', transactionId))
+        .fetch();
 
+      if (existingTransactions.length === 0 && !item.transactionId) {
+        recordsToBatch.push(
+          database.get<Transaction>('transactions').prepareCreate(t => {
+            t._raw.id = transactionId;
+            t.userId = installment.userId;
+            t.categoryId = installmentCategoryId;
+            t.walletId = installment.walletId;
+            t.amount = amount;
+            t.type = 'expense';
+            t.note = `${installment.name} - kỳ ${item.periodNumber}`;
+            t.date = item.dueDate;
+          }),
+        );
+        walletChanges.set(wallet, (walletChanges.get(wallet) ?? 0) + amount);
+      }
+
+      recordsToBatch.push(
+        item.prepareUpdate(i => {
+          i.transactionId = transactionId;
+          i.status = 'BILLED';
+        }),
+      );
+
+      billedInstallments.set(installment.id, installment);
+      billedItemIds.add(item.id);
+    }
+
+    // Prepare each wallet once, even when several periods are overdue.
+    for (const [wallet, amount] of walletChanges) {
       recordsToBatch.push(
         wallet.prepareUpdate(w => {
           const current = Number(w.currentBalance) || 0;
@@ -152,24 +186,17 @@ export const autoBillDueInstallmentItems = async (userId: string) => {
             w.walletType === 'credit' ? current + amount : current - amount;
         }),
       );
+    }
 
-      recordsToBatch.push(
-        item.prepareUpdate(i => {
-          i.transactionId = transaction.id;
-          i.status = 'BILLED';
-        }),
-      );
-
-      const remainingPending = await database.collections
+    for (const installment of billedInstallments.values()) {
+      const pendingItems = await database
         .get<InstallmentItem>('installment_items')
         .query(
           Q.where('installment_id', installment.id),
-          Q.where('status', Q.eq('PENDING')),
-          Q.where('id', Q.notEq(item.id)),
+          Q.where('status', 'PENDING'),
         )
-        .fetchCount();
-
-      if (remainingPending === 0) {
+        .fetch();
+      if (pendingItems.every(item => billedItemIds.has(item.id))) {
         recordsToBatch.push(
           installment.prepareUpdate(record => {
             record.status = 'COMPLETED';
@@ -183,5 +210,5 @@ export const autoBillDueInstallmentItems = async (userId: string) => {
     }
   });
 
-  syncData().catch(console.error);
+  await syncData();
 };
