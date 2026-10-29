@@ -26,6 +26,8 @@ type AppSwipeableProps = {
   onDelete?: (reset: () => void) => void;
   onRestore?: (reset: () => void) => void;
   typeRightIcon?: 'delete' | 'restore';
+  rightIconName?: string;
+  disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   backgroundColor?: keyof Theme['colors'];
 };
@@ -41,6 +43,8 @@ const AppSwipeable = ({
   onDelete,
   onRestore,
   typeRightIcon = 'delete',
+  rightIconName,
+  disabled = false,
   style,
 }: AppSwipeableProps) => {
   const { colors } = useTheme<Theme>();
@@ -99,7 +103,7 @@ const AppSwipeable = ({
     }));
 
     return (
-      <AppButton shadow={false} onPress={handlePress}>
+      <AppButton shadow={false} onPress={handlePress} disabled={disabled}>
         <Box
           width={100}
           justifyContent="center"
@@ -108,7 +112,7 @@ const AppSwipeable = ({
         >
           <Animated.View style={animatedTrashStyle}>
             <AppIcon
-              name={typeRightIcon === 'delete' ? 'trash' : 'trash-arrow-up'}
+              name={rightIconName ?? (typeRightIcon === 'delete' ? 'trash' : 'trash-arrow-up')}
               size={20}
               color={COLORS.white}
             />
@@ -144,6 +148,7 @@ const AppSwipeable = ({
   };
 
   const handleRightActionPress = () => {
+    if (disabled) return;
     ReactNativeHapticFeedback.trigger('impactMedium', hapticOptions);
     originalHeight.value = height.value;
     scale.value = withTiming(0.95);
@@ -170,6 +175,7 @@ const AppSwipeable = ({
     >
       <ReanimatedSwipeable
         ref={swipeableRef}
+        enabled={!disabled}
         key={swipeableKey}
         renderRightActions={progress => (
           <RightAction

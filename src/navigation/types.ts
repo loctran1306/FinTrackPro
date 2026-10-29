@@ -4,6 +4,7 @@ import {
   NavigatorScreenParams,
 } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { TransactionDraft } from '@/services/ai/ai.types';
 
 /** Main Tab Param List */
 export type MainTabParamList = {
@@ -20,7 +21,12 @@ export type RootStackParamList = {
   AuthStack: undefined;
   // MainTab chứa các màn hình Tab, sử dụng NavigatorScreenParams để lồng vào nhau
   MainTab: NavigatorScreenParams<MainTabParamList>;
-  TransactionForm: { transactionId?: string } | undefined;
+  TransactionForm:
+    | {
+        transactionId?: string;
+        initialDraft?: { userId: string; value: TransactionDraft };
+      }
+    | undefined;
   AddWallet: { type: 'cash' | 'bank' | 'credit' };
   WalletTransfer: { transactionId?: string } | undefined;
   BalanceAdjustment: undefined;

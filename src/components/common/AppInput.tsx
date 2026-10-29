@@ -1,3 +1,4 @@
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import React, { useState } from 'react';
 import { TextInput, TextInputProps, StyleSheet, KeyboardTypeOptions } from 'react-native';
 import { Box, Text } from '@/theme/components';
@@ -7,6 +8,7 @@ import AppIcon from '@/components/common/AppIcon';
 import { RADIUS } from '@/theme/constant';
 
 interface AppInputProps extends TextInputProps {
+  inBottomSheet?: boolean;
   label?: string;
   icon?: string;
   error?: string;
@@ -18,6 +20,7 @@ interface AppInputProps extends TextInputProps {
 }
 
 const AppInput = ({
+  inBottomSheet = false,
   label,
   icon,
   error,
@@ -29,6 +32,7 @@ const AppInput = ({
   ...props
 }: AppInputProps) => {
   const { colors } = useTheme<Theme>();
+  const InputComponent = inBottomSheet ? BottomSheetTextInput : TextInput;
   const [isFocused, setIsFocused] = useState(false);
 
   // Xác định màu Border dựa trên trạng thái
@@ -71,7 +75,7 @@ const AppInput = ({
             />
           </Box>
         )}
-        <TextInput
+        <InputComponent
           style={[styles.input, { color: colors.text, fontSize: 16 }]}
           placeholderTextColor={colors.secondaryText}
           keyboardType={type}

@@ -9,9 +9,7 @@ import AppBottomSheet, {
 } from '@/components/common/AppBottomSheet';
 import AppBottomSheetInput from '@/components/common/AppBottomSheetInput';
 import AppIcon from '@/components/common/AppIcon';
-import QuickTransactionBottomSheet, {
-  QuickTransactionBottomSheetRef,
-} from '@/components/modals/QuickTransactionBottomSheet';
+import OnDeviceTransactionBottomSheet from '@/components/modals/OnDeviceTransactionBottomSheet';
 import { WALLET_TYPE, WALLET_TYPE_LABEL } from '@/constants/wallet.const';
 import { RootStackParamList } from '@/navigation/types';
 import { syncData } from '@/services/sync/syncDataSupabase';
@@ -31,6 +29,7 @@ import HomeOverview from './components/HomeOverview';
 import HomeTransaction from './components/HomeTransaction';
 import QuickAction from './components/QuickAction';
 import WalletList from './components/WalletList';
+import TransactionInboxBottomSheet from '@/components/modals/TransactionInboxBottomSheet';
 
 export const HomeScreen = () => {
   const { t } = useTranslation();
@@ -41,6 +40,7 @@ export const HomeScreen = () => {
     useState<WALLET_TYPE | null>(null);
   const [walletName, setWalletName] = useState('');
   const [walletAmount, setWalletAmount] = useState('');
+  const [inboxCount, setInboxCount] = useState(0);
   const dispatch = useAppDispatch();
   const { session } = useAppSelector(state => state.auth);
   const { time, isNetworkConnected } = useAppSelector(state => state.global);
@@ -102,7 +102,8 @@ export const HomeScreen = () => {
   };
 
   const bottomSheetRef = useRef<AppBottomSheetRef>(null);
-  const quickTransactionRef = useRef<QuickTransactionBottomSheetRef>(null);
+  const quickTransactionRef = useRef<AppBottomSheetRef>(null);
+  const inboxRef = useRef<AppBottomSheetRef>(null);
   const bottomTabBarHeight = useBottomTabBarHeight();
 
   return (
@@ -120,6 +121,15 @@ export const HomeScreen = () => {
         <QuickAction
           onCreateWallet={handleCreateWallet}
           onQuickTransaction={() => quickTransactionRef.current?.expand()}
+          onOpenInbox={() => inboxRef.current?.expand()}
+          inboxCount={inboxCount}
+        />
+        <TransactionInboxBottomSheet
+          key={session?.user?.id ?? ''}
+          ref={inboxRef}
+          userId={session?.user?.id}
+          online={isNetworkConnected}
+          onPendingCountChange={setInboxCount}
         />
         <WalletList />
         <Box backgroundColor="main" flex={1} gap="s" paddingTop="m">
@@ -194,7 +204,14 @@ export const HomeScreen = () => {
           </AppButton>
         </Box>
       </AppBottomSheet>
-      <QuickTransactionBottomSheet ref={quickTransactionRef} />
+      <OnDeviceTransactionBottomSheet
+        key={session?.user?.id ?? ''}
+        ref={quickTransactionRef}
+        userId={session?.user?.id ?? ''}
+        onDraft={draft => navigation.navigate('TransactionForm', {
+          initialDraft: { userId: session?.user?.id ?? '', value: draft },
+        })}
+      />
     </Screen>
   );
 };

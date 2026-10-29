@@ -1,6 +1,7 @@
 import AppIcon from '@/components/common/AppIcon';
 import Screen from '@/components/common/Screen';
 import { checkSessionAndToken } from '@/lib/supabase';
+import { clearSession, setSession } from '@/store/auth/auth.slice';
 import { useAppDispatch } from '@/store/hooks';
 import { COLORS } from '@/theme';
 import { useNavigation } from '@react-navigation/native';
@@ -17,18 +18,13 @@ const SplashScreen = () => {
 
   useEffect(() => {
     const initApp = async () => {
-      const { isAuthenticated, session, isOffline } =
-        await checkSessionAndToken();
-
-      if (isOffline) {
-        console.log('offline');
-        navigation.replace('MainTab', { screen: 'Home' });
-        return;
-      }
+      const { isAuthenticated, session } = await checkSessionAndToken();
 
       if (isAuthenticated && session?.user?.id) {
+        dispatch(setSession(session));
         navigation.replace('MainTab', { screen: 'Home' });
       } else {
+        dispatch(clearSession());
         navigation.replace('AuthStack');
       }
     };

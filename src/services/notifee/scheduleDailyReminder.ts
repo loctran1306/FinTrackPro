@@ -23,7 +23,7 @@ export const scheduleDailyReminder = async () => {
   date.setSeconds(0);
 
   if (Date.now() >= date.getTime()) {
-    date.setDate(date.getDate() + 1); // Lưu ý: Chỗ này cộng 1 ngày nhé, không phải 11
+    date.setDate(date.getDate() + 1); 
   }
 
   const trigger = {

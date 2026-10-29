@@ -19,7 +19,6 @@ import * as Updates from 'expo-updates';
 import { navigationRef } from '@/navigation/navigationRef';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { RootNavigator } from '@navigation/RootNavigator';
-import notifee from '@notifee/react-native';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { darkTheme, theme } from '@theme';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -29,6 +28,7 @@ import { useWalletsRealtime } from './hooks/useWalletsRealtime';
 import { registerNotificationFirebase } from './lib/firebase';
 import { checkSessionAndToken } from './lib/supabase';
 import './locales';
+import { deviceService } from './services/device/device.service';
 import { scheduleDailyReminder } from './services/notifee/scheduleDailyReminder';
 import { clearSession, setSession } from './store/auth/auth.slice';
 import { setNetworkStatus } from './store/global/global.slice';
@@ -74,57 +74,37 @@ const AppContent = () => {
 
   const activeTheme = resolvedDarkMode ? darkTheme : theme;
 
-  const requestUserPermission = async () => {
-    const settings = await notifee.requestPermission();
-
-    if (settings.authorizationStatus >= 1) {
-      console.log('Đã có quyền thông báo!');
-    } else {
-      console.log('Người dùng từ chối quyền thông báo');
-    }
-  };
-
   useEffect(() => {
     LogBox.ignoreLogs([
       'Sending `onAnimatedValueUpdate` with no listeners registered.',
     ]);
 
-    const init = async () => {
-      console.log('Khởi tạo App FinTrack Pro...');
-      await scheduleDailyReminder();
-      await requestUserPermission();
-      const { isAuthenticated, session, isOffline } =
-        await checkSessionAndToken();
+    // SplashScreen owns session restoration. Permissions and push registration
+    // must never hold the native splash open.
+    RNBootSplash.hide({ fade: true }).catch(console.error);
+    scheduleDailyReminder().catch(console.error);
+  }, []);
 
-      if (isOffline) {
-        // Offline khi khởi động → giữ session cũ (nếu có trong AsyncStorage)
-        console.log('📴 Khởi động offline — giữ session cũ');
-        // Không dispatch clearSession → user vẫn thấy app
-      } else if (isAuthenticated) {
-        dispatch(setSession(session));
-      } else {
-        dispatch(clearSession());
-        navigationRef.navigate('AuthStack');
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !session?.user?.id) return;
+    const userId = session.user.id;
+    NetInfo.fetch().then(network => {
+      if (network.isConnected && network.isInternetReachable !== false) {
+        registerNotificationFirebase().catch(console.error);
+        deviceService.updateDeviceToken(userId).catch(console.error);
       }
-
-      if (Platform.OS === 'android') {
-        registerNotificationFirebase();
-      }
-    };
-
-    init().finally(async () => {
-      await RNBootSplash.hide({ fade: true });
-    });
-  }, [dispatch]);
+    }).catch(console.error);
+  }, [session]);
 
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
         console.log('nextAppState', nextAppState);
-        const { isAuthenticated, session, isOffline } =
+        const { isAuthenticated, session: restoredSession, isOffline } =
           await checkSessionAndToken();
 
         if (isOffline) {
+          if (restoredSession) dispatch(setSession(restoredSession));
           // Offline: giữ nguyên session hiện tại, không logout
           console.log('📴 App foreground nhưng offline — giữ session');
           return;
@@ -135,7 +115,7 @@ const AppContent = () => {
           dispatch(clearSession());
           navigationRef.navigate('AuthStack');
         } else {
-          dispatch(setSession(session));
+          dispatch(setSession(restoredSession));
         }
       }
     };

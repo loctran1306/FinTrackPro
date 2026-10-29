@@ -12,9 +12,11 @@ import { WALLET_TYPE, WALLET_TYPE_ICON } from '@/constants/wallet.const';
 type Props = {
   onCreateWallet: (type: WALLET_TYPE) => void;
   onQuickTransaction?: () => void;
+  onOpenInbox: () => void;
+  inboxCount: number;
 };
 
-const QuickAction = ({ onCreateWallet, onQuickTransaction }: Props) => {
+const QuickAction = ({ onCreateWallet, onQuickTransaction, onOpenInbox, inboxCount }: Props) => {
   const { t } = useTranslation();
   const { colors } = useTheme<Theme>();
   const rootNavigation =
@@ -46,19 +48,7 @@ const QuickAction = ({ onCreateWallet, onQuickTransaction }: Props) => {
       icon: <AppIcon name="plus" size={20} color={colors.primary} />,
       options: walletOptions,
     },
-    {
-      id: 'transfer',
-      label: t('finance.transfer'),
-      icon: (
-        <AppIcon
-          name="arrow-right-arrow-left"
-          size={20}
-          color={colors.primary}
-        />
-      ),
-      options: [],
-      onMainPress: () => rootNavigation.navigate('WalletTransfer'),
-    },
+    
     {
       id: 'quick',
       label: t('finance.quick_entry') || 'Nhập nhanh',
@@ -70,6 +60,19 @@ const QuickAction = ({ onCreateWallet, onQuickTransaction }: Props) => {
       label: t('finance.installment'),
       icon: <AppIcon name="hand-holding-dollar" size={20} color={colors.primary} />,
       onMainPress: () => rootNavigation.navigate('Installments'),
+    },
+    {
+      id: 'inbox',
+      label: t('inbox.shortcut_label'),
+      icon: (
+        <AppIcon
+          name="inbox"
+          size={20}
+          color={colors.primary}
+        />
+      ),
+      options: [],
+      onMainPress: onOpenInbox,
     },
   ];
 
@@ -83,12 +86,35 @@ const QuickAction = ({ onCreateWallet, onQuickTransaction }: Props) => {
     >
       {quickActions.map(action => (
         <Box key={action.id} alignItems="center" width="23%" gap="s">
-          <SpeedDialWrapper
-            options={(action as any).options || []}
-            mainIcon={action.icon}
-            mainColor={colors.highlight}
-            onMainPress={(action as any).onMainPress}
-          />
+          <Box position="relative">
+            <SpeedDialWrapper
+              options={(action as any).options || []}
+              mainIcon={action.icon}
+              mainColor={colors.highlight}
+              onMainPress={(action as any).onMainPress}
+            />
+            {action.id === 'inbox' && inboxCount > 0 && (
+              <Box
+                position="absolute"
+                zIndex={1000}
+                style={{ elevation: 5 }}
+                top={-4}
+                right={-6}
+                minWidth={20}
+                height={20}
+                paddingHorizontal="xs"
+                borderRadius={9999}
+                backgroundColor="danger"
+                alignItems="center"
+                justifyContent="center"
+                pointerEvents="none"
+              >
+                <Text color="white" fontSize={11} fontFamily="semiBold">
+                  {inboxCount > 99 ? '99+' : inboxCount}
+                </Text>
+              </Box>
+            )}
+          </Box>
           <Text textAlign="center" variant="caption" color="secondaryText">
             {action.label}
           </Text>
